@@ -1,0 +1,2 @@
+recursive-include pumaska/static *
+recursive-include pumaska/templates *

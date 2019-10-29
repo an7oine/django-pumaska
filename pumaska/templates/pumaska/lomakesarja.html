@@ -1,0 +1,54 @@
+{% load i18n %}
+
+{% comment %}
+  Parametrit:
+    lomakesarja: Näytettävä lomakesarja
+{% endcomment %}
+
+<span
+  class="lomakesarja"
+  data-prefix="{{ lomakesarja.prefix }}"
+  data-lisaa-painike="{{ lomakesarja.lisaa_painike }}"
+  data-poista-painike="{{ lomakesarja.poista_painike }}"
+  data-jarjestettava="{{ lomakesarja.can_order|yesno:"true,false" }}"
+  >
+  {% with lomakesarja.riviaihio|default:"pumaska/lomakesarja_rivi.html" as riviaihio %}
+    {# Näytä olemassaolevat lomakkeet. #}
+    {% for sisakkainen_lomake in lomakesarja.forms %}
+      <div
+        class="panel panel-default lomakesarja-rivi {{ lomakesarja.riviluokka }}"
+        >
+        {% for kentta in sisakkainen_lomake.hidden_fields %}
+          {{ kentta }}
+        {% endfor %}
+        {% include riviaihio with form=sisakkainen_lomake %}
+        {% if lomakesarja.can_order %}
+          {{ sisakkainen_lomake.ORDER }}
+        {% endif %}
+        {% if lomakesarja.can_delete and sisakkainen_lomake.instance.pk %}
+          {{ sisakkainen_lomake.DELETE }}
+        {% endif %}
+      </div>
+    {% endfor %}
+
+    {# Lisää ylimääräinen lomake uusien rivien lisäämispohjaksi. #}
+    {% with lomakesarja.empty_form as sisakkainen_lomake %}
+      <div
+        class="panel panel-default lomakesarja-rivi {{ lomakesarja.riviluokka }}"
+        >
+        {% for kentta in sisakkainen_lomake.hidden_fields %}
+          {{ kentta }}
+        {% endfor %}
+        {% include riviaihio with form=sisakkainen_lomake %}
+        {% if lomakesarja.can_order %}
+          {{ sisakkainen_lomake.ORDER }}
+        {% endif %}
+      </div>
+    {% endwith %}
+
+    <div class="container-fluid">
+      {{ lomakesarja.non_form_errors }}
+      {{ lomakesarja.management_form }}
+    </div>
+  {% endwith %}
+</span>
