@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import functools
+import itertools
 
 from django import forms
 
@@ -32,20 +33,20 @@ def nido(*args, **kwargs):
   if 'avain_a' in kwargs:
     avain_a = kwargs.pop('avain_a')
   else:
-    avain_a, = (
+    avain_a, *_ = itertools.chain((
       f.name for f in lomake_a.Meta.model._meta.get_fields()
       if f.is_relation and f.related_model == lomake_b.Meta.model
-    )
+    ), (None, ))
   if avain_a is not None:
     kwargs['avain_a'] = avain_a
 
   if 'avain_b' in kwargs:
     avain_b = kwargs.pop('avain_b')
   else:
-    avain_b, = (
+    avain_b, *_ = itertools.chain((
       f.name for f in lomake_b.Meta.model._meta.get_fields()
       if f.is_relation and f.related_model == lomake_a.Meta.model
-    )
+    ), (None, ))
   if avain_b is not None:
     kwargs['avain_b'] = avain_b
 

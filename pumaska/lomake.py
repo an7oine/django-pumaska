@@ -78,7 +78,9 @@ def yhdista_lomakkeet(
             setattr(kohde_b, avain_b, self.instance)
         except (AttributeError, TypeError):
           pass
-      assert isinstance(kohde_b, LomakeB.Meta.model)
+      assert isinstance(kohde_b, LomakeB.Meta.model), (
+        f'Kohde B ei voi olla tyyppiä {type(kohde_b)} != {LomakeB.Meta.model}!'
+      )
 
       lomake_b = LomakeB(
         instance=kohde_b,
