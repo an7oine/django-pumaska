@@ -129,7 +129,7 @@ def lisaa_lomakesarja(
         if lomake not in lomakesarja.deleted_forms:
           for avain, arvo in list(lomake.errors.items()):
             virheet.append([
-              '%s-%d-%s' % (lomakesarja.prefix, indeksi, avain), arvo
+              '%s-%d-%s' % (tunnus, indeksi, avain), arvo
             ])
       if any(lomakesarja.non_form_errors()):
         virheet.append([
