@@ -34,7 +34,7 @@
     {# Lisää ylimääräinen lomake uusien rivien lisäämispohjaksi. #}
     {% with lomakesarja.empty_form as sisakkainen_lomake %}
       <div
-        class="panel panel-default lomakesarja-rivi {{ lomakesarja.riviluokka }}"
+        class="panel panel-default tarkkailu-estetty lomakesarja-rivi {{ lomakesarja.riviluokka }}"
         >
         {% for kentta in sisakkainen_lomake.hidden_fields %}
           {{ kentta }}
@@ -46,9 +46,14 @@
       </div>
     {% endwith %}
 
+    {# Lomakesarjan mahdolliset virheet ja hallinnointilomake. #}
     <div class="container-fluid">
       {{ lomakesarja.non_form_errors }}
       {{ lomakesarja.management_form }}
     </div>
   {% endwith %}
 </span>
+
+<script>
+  $(document.body).on("lisatty", ".{{ lomakesarja.riviluokka }}", function () {$(this).removeClass("tarkkailu-estetty"); });
+</script>
