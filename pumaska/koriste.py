@@ -19,16 +19,10 @@ def nido(*args, **kwargs):
     return koriste
 
   lomake_a, lomake_b = args
-  if not issubclass(lomake_a, forms.ModelForm):
-    raise ValueError(
-      f'Liitettävien lomakkeiden tulee olla tyyppiä `forms.ModelForm`,'
-      f' ei {type(lomake_a)!r}'
-    )
-  if not issubclass(lomake_b, forms.ModelForm):
-    raise ValueError(
-      f'Liitettävien lomakkeiden tulee olla tyyppiä `forms.ModelForm`,'
-      f' ei {type(lomake_b)!r}'
-    )
+  assert isinstance(lomake_a, type) and issubclass(lomake_a, forms.ModelForm), \
+  f'Virheellinen A-lomakeluokka {lomake_a!r}'
+  assert isinstance(lomake_b, type) and issubclass(lomake_b, forms.ModelForm), \
+  f'Virheellinen B-lomakeluokka {lomake_b!r}'
 
   if 'avain_a' in kwargs:
     avain_a = kwargs.pop('avain_a')
@@ -67,11 +61,10 @@ def nido(*args, **kwargs):
 
   if useita:
     from django.contrib.contenttypes.fields import GenericForeignKey
-    epasuora = isinstance(
+    kwargs['epasuora'] = isinstance(
       lomake_b.Meta.model._meta.get_field(avain_b),
       GenericForeignKey,
     )
-    kwargs['epasuora'] = epasuora
 
   return (lisaa_lomakesarja if useita else yhdista_lomakkeet)(*args, **kwargs)
   # def nido
