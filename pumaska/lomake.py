@@ -67,10 +67,11 @@ def yhdista_lomakkeet(
         pass
       elif kohde_b is not None:
         kohde_b = LomakeB.Meta.model.objects.get(pk=kohde_b)
-      elif self.instance and avain_a and hasattr(self.instance, avain_a):
-        kohde_b = getattr(self.instance, avain_a)
+      elif self.instance and avain_a:
+        kohde_b = getattr(self.instance, avain_a, None)
+
       # Mikäli olemassaolevaa B-kohdetta ei löytynyt, luodaan uusi.
-      else:
+      if kohde_b is None:
         kohde_b = LomakeB.Meta.model()
         # Asetetaan linkki B-->A, jos mahdollista
         try:
