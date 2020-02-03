@@ -48,11 +48,13 @@ def yhdista_lomakkeet(
   kentta_b = LomakeB.Meta.model._meta.get_field(avain_b)
   tunnus = tunnus or avain_a or kentta_b.remote_field.name
 
-  # Mikäli A-avainta ei ole annettu, B-lomakkeen tallennusta ei voida vaatia.
-  if not avain_a:
-    pakollinen_b = False
-  elif pakollinen_b is None:
-    pakollinen_b = not LomakeA.Meta.model._meta.get_field(avain_a).null
+  # Mikäli A-avainta ei ole annettu,
+  # B-lomake on oletuksena valinnainen.
+  # Muutoin haetaan oletus vastaavan kentän tiedoista.
+  if pakollinen_b is None:
+    pakollinen_b = avain_a and (
+      not LomakeA.Meta.model._meta.get_field(avain_a).null
+    )
 
   class YhdistettyLomake(LomakeA):
     class Meta(LomakeA.Meta):
