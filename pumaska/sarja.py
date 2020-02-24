@@ -102,24 +102,12 @@ def lisaa_lomakesarja(
       ))
       # def __init__
 
-    def _html_output(self, *args, **kwargs):
-      # pylint: disable=protected-access
-      return super()._html_output(*args, **kwargs) \
-      + loader.get_template('pumaska/lomakesarja.html').render({
-        'tunnus': tunnus,
-        'lomakesarja': getattr(self, tunnus),
-      })
-      # def _html_output
+    # def order_fields(self, field_order)
+    # def __str__(self)
+    # def __repr__(self)
 
-    def has_changed(self):
-      return super().has_changed() \
-      or getattr(self, tunnus).has_changed()
-      # def has_changed
-
-    def is_valid(self):
-      return super().is_valid() \
-      and getattr(self, tunnus).is_valid()
-      # def is_valid
+    # def __iter__(self)
+    # def __getitem__(self, item)
 
     @property
     def errors(self):
@@ -139,6 +127,54 @@ def lisaa_lomakesarja(
         ])
       return forms.utils.ErrorDict(virheet)
       # def errors
+
+    def is_valid(self):
+      return super().is_valid() \
+      and getattr(self, tunnus).is_valid()
+      # def is_valid
+
+    # def add_prefix(self, field_name)
+    # def add_initial_prefix(self, field_name)
+
+    def _html_output(self, *args, **kwargs):
+      # pylint: disable=protected-access
+      return super()._html_output(*args, **kwargs) \
+      + loader.get_template('pumaska/lomakesarja.html').render({
+        'tunnus': tunnus,
+        'lomakesarja': getattr(self, tunnus),
+      })
+      # def _html_output
+
+    # def as_table(self)
+    # def as_ul(self)
+    # def as_p(self)
+    # def non_field_errors(self)
+    # def add_error(self, field, error)
+    # def has_error(self, field, code=None)
+    # def full_clean(self)
+    # def _clean_fields(self)
+    # def _clean_form(self)
+    # def _post_clean(self)
+    # def clean(self)
+
+    def has_changed(self):
+      return super().has_changed() \
+      or getattr(self, tunnus).has_changed()
+      # def has_changed
+
+    #@cached_property
+    #def changed_data(self)
+
+    #@property
+    #def media(self)
+
+    #def is_multipart(self)
+    #def hidden_fields(self)
+    #def visible_fields(self)
+    #def get_initial_for_field(self, field, field_name)
+
+
+    # ModelForm
 
     @transaction.atomic
     def save(self, commit=True):

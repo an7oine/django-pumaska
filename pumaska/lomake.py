@@ -108,6 +108,10 @@ def yhdista_lomakkeet(
           kentta.field.required = False
       # def __init__
 
+    # def order_fields(self, field_order)
+    # def __str__(self)
+    # def __repr__(self)
+
     def __iter__(self):
       return chain(
         super().__iter__(),
@@ -115,45 +119,12 @@ def yhdista_lomakkeet(
       )
       # def __iter__
 
-    def __contains__(self, key):
-      if hasattr(super(), '__contains__') \
-      and super().__contains__(key):
-        return True
-      elif hasattr(getattr(self, tunnus), '__contains__') \
-      and key in getattr(self, tunnus):
-        return True
-      elif key in getattr(self, tunnus).Meta.fields:
-        return True
-      else:
-        return key in self.Meta.fields
-      # def __contains__
-
     def __getitem__(self, item):
       try:
         return super().__getitem__(item)
       except KeyError:
         return getattr(self, tunnus).__getitem__(item)
       # def __getitem__
-
-    def _html_output(self, *args, **kwargs):
-      # pylint: disable=protected-access
-      return super()._html_output(*args, **kwargs) \
-      + getattr(self, tunnus)._html_output(*args, **kwargs)
-      # def _html_output
-
-    def has_changed(self):
-      return super().has_changed() \
-      or getattr(self, tunnus).has_changed()
-      # def has_changed
-
-    def is_valid(self):
-      '''
-      Jos B-viittaus saa olla tyhjä,
-      ei välitetä B-lomakkeen mahdollisesta epäkelpoisuudesta.
-      '''
-      return super().is_valid() \
-      and (getattr(self, tunnus).is_valid() or not pakollinen_b)
-      # def is_valid
 
     @property
     def errors(self):
@@ -170,6 +141,71 @@ def yhdista_lomakkeet(
           ])
       return forms.utils.ErrorDict(virheet)
       # def errors
+
+    def is_valid(self):
+      '''
+      Jos B-viittaus saa olla tyhjä,
+      ei välitetä B-lomakkeen mahdollisesta epäkelpoisuudesta.
+      '''
+      return super().is_valid() \
+      and (getattr(self, tunnus).is_valid() or not pakollinen_b)
+      # def is_valid
+
+    # def add_prefix(self, field_name)
+    # def add_initial_prefix(self, field_name)
+
+    def _html_output(self, *args, **kwargs):
+      # pylint: disable=protected-access
+      return super()._html_output(*args, **kwargs) \
+      + getattr(self, tunnus)._html_output(*args, **kwargs)
+      # def _html_output
+
+    # def as_table(self)
+    # def as_ul(self)
+    # def as_p(self)
+    # def non_field_errors(self)
+    # def add_error(self, field, error)
+    # def has_error(self, field, code=None)
+    # def full_clean(self)
+    # def _clean_fields(self)
+    # def _clean_form(self)
+    # def _post_clean(self)
+    # def clean(self)
+
+    def has_changed(self):
+      return super().has_changed() \
+      or getattr(self, tunnus).has_changed()
+      # def has_changed
+
+    #@cached_property
+    #def changed_data(self)
+
+    #@property
+    #def media(self)
+
+    #def is_multipart(self)
+    #def hidden_fields(self)
+    #def visible_fields(self)
+    #def get_initial_for_field(self, field, field_name)
+
+
+    # `in`
+
+    def __contains__(self, key):
+      if hasattr(super(), '__contains__') \
+      and super().__contains__(key):
+        return True
+      elif hasattr(getattr(self, tunnus), '__contains__') \
+      and key in getattr(self, tunnus):
+        return True
+      elif key in getattr(self, tunnus).Meta.fields:
+        return True
+      else:
+        return key in self.Meta.fields
+      # def __contains__
+
+
+    # ModelForm
 
     @transaction.atomic
     def _save_m2m(self):
