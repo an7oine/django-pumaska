@@ -5,6 +5,7 @@ from django.db import transaction
 from django.db.models import ProtectedError
 from django import forms
 from django.template import loader
+from django.utils.functional import cached_property
 from django.utils.translation import ugettext_lazy as _
 
 
@@ -97,7 +98,7 @@ def lisaa_lomakesarja(
         files=kwargs.get('files'),
         instance=self.instance,
         initial=[initial] if initial else [],
-        prefix=prefix + '-' + tunnus if prefix else tunnus,
+        prefix=f'{self.prefix}-{tunnus}' if self.prefix else tunnus,
         **lomakesarja_kwargs,
       ))
       # def __init__
@@ -162,8 +163,26 @@ def lisaa_lomakesarja(
       or getattr(self, tunnus).has_changed()
       # def has_changed
 
-    #@cached_property
-    #def changed_data(self)
+    @cached_property
+    def changed_data(self):
+      '''
+      Palauta ylälomakkeen omien muutosten lisäksi
+      liitoslomakkeiden mahdolliset muutokset
+      lomakesarjan määrittämillä, lomakekohtaisella
+      etuliitteillä varustettuina.
+      '''
+      lomakesarja = getattr(self, tunnus)
+      # Muodosta lomakekohtainen kentän etuliite poistamalla
+      # liitetyn lomakkeen `prefixin` alusta
+      # käsillä olevan (ylä-) lomakkeen oma `prefix`.
+      lomakekohtainen_tunnus = (
+        lambda lomake: lomake.prefix.replace(self.prefix, "", 1)
+      ) if self.prefix else lambda lomake: lomake.prefix
+      return super().changed_data + sum([[
+        f'{lomakekohtainen_tunnus(lomake)}-{kentta}'
+        for kentta in lomake.changed_data
+      ] for lomake in lomakesarja], [])
+      # def changed_data
 
     #@property
     #def media(self)

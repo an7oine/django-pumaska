@@ -6,6 +6,7 @@ import types
 
 from django.db import DatabaseError, transaction
 from django import forms
+from django.utils.functional import cached_property
 from django.utils.module_loading import import_string
 
 
@@ -94,7 +95,7 @@ def yhdista_lomakkeet(
           for avain, arvo in self.initial.items()
           if avain.startswith(tunnus + '-') and avain != tunnus + '-'
         },
-        prefix=prefix + '-' + tunnus if prefix else tunnus,
+        prefix=f'{self.prefix}-{tunnus}' if self.prefix else tunnus,
         **lomake_kwargs
       )
       if avain_b in lomake_b.fields:
@@ -177,8 +178,19 @@ def yhdista_lomakkeet(
       or getattr(self, tunnus).has_changed()
       # def has_changed
 
-    #@cached_property
-    #def changed_data(self)
+    @cached_property
+    def changed_data(self):
+      '''
+      Palauta ylälomakkeen omien muutosten lisäksi
+      liitoslomakkeen mahdolliset muutokset
+      `tunnus`-etuliitteellä varustettuina.
+      '''
+      lomake = getattr(self, tunnus)
+      return super().changed_data + [
+        f'{tunnus}-{kentta}'
+        for kentta in lomake.changed_data
+      ]
+      # def changed_data
 
     #@property
     #def media(self)
