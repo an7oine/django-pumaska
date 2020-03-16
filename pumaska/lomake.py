@@ -131,10 +131,10 @@ def yhdista_lomakkeet(
     def errors(self):
       '''
       Lisää B-lomakkeen mahdolliset virheet silloin, kun
-      B-viittaus ei saa olla tyhjä.
+      B-viittaus ei saa olla tyhjä, tai B-lomaketta on muokattu.
       '''
       virheet = list(super().errors.items())
-      if pakollinen_b:
+      if pakollinen_b or getattr(self, tunnus).has_changed():
         lomake_b = getattr(self, tunnus)
         for avain, arvo in list(lomake_b.errors.items()):
           virheet.append([
@@ -145,11 +145,13 @@ def yhdista_lomakkeet(
 
     def is_valid(self):
       '''
-      Jos B-viittaus saa olla tyhjä,
+      Jos B-viittaus saa olla tyhjä eikä sitä ole muokattu,
       ei välitetä B-lomakkeen mahdollisesta epäkelpoisuudesta.
       '''
       return super().is_valid() \
-      and (getattr(self, tunnus).is_valid() or not pakollinen_b)
+      and (getattr(self, tunnus).is_valid() or (
+        not pakollinen_b and not getattr(self, tunnus).has_changed()
+      ))
       # def is_valid
 
     # def add_prefix(self, field_name)
@@ -239,8 +241,10 @@ def yhdista_lomakkeet(
             with transaction.atomic():
               lomake_b.save(commit=True)
           except (ValueError, DatabaseError):
-            if vanha_kohde_b.pk is not None:
-              vanha_kohde_b.delete()
+            if pakollinen_b:
+              raise
+            # Säilytetään olemassaoleva tietue.
+            vanha_kohde_b.refresh_from_db()
           # if vanha_kohde_b == lomake_b.instance and vanha_kohde_b.pk
         else:
           # Asetetaan linkki B-->A
