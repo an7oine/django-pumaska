@@ -4,7 +4,7 @@
 import contextlib
 from decimal import Decimal
 import itertools
-import unittest
+from unittest.mock import patch
 
 from django.db import models
 from django import forms
@@ -52,12 +52,8 @@ class Testi(SimpleTestCase):
       }}
       self.assertEqual(tietue, next(tietueet))
       # def tallenna
-    with unittest.mock.patch(
-      'django.db.transaction.Atomic.__enter__'
-    ):
-      with unittest.mock.patch(
-        'django.db.models.base.Model.save', tallenna,
-      ):
+    with patch('django.db.transaction.Atomic.__enter__'):
+      with patch('django.db.models.base.Model.save', tallenna):
         yield
     self.assertRaises(StopIteration, next, tietueet)
     # def varmista_tietueiden_tallennus
