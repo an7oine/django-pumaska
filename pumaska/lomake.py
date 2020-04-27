@@ -78,8 +78,7 @@ def yhdista_lomakkeet(
         kohde_b = LomakeB.Meta.model()
         # Asetetaan linkki B-->A, jos mahdollista
         try:
-          with transaction.atomic():
-            setattr(kohde_b, avain_b, self.instance)
+          setattr(kohde_b, avain_b, self.instance)
         except (AttributeError, TypeError):
           pass
       assert isinstance(kohde_b, LomakeB.Meta.model), (
@@ -238,8 +237,7 @@ def yhdista_lomakkeet(
         if vanha_kohde_b == lomake_b.instance and vanha_kohde_b.pk:
           # Päivitetään olemassaoleva B
           try:
-            with transaction.atomic():
-              lomake_b.save(commit=True)
+            lomake_b.save(commit=True)
           except (ValueError, DatabaseError):
             if pakollinen_b:
               raise
@@ -252,8 +250,7 @@ def yhdista_lomakkeet(
 
           # Yritetään tallentaa B ja otetaan virhe kiinni
           try:
-            with transaction.atomic():
-              kohde_b = lomake_b.save(commit=True)
+            kohde_b = lomake_b.save(commit=True)
           except (ValueError, DatabaseError):
             if pakollinen_b:
               raise

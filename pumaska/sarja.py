@@ -212,8 +212,7 @@ def lisaa_lomakesarja(
       lomakesarja = getattr(self, tunnus)
       lomakesarja.instance = self.instance
       try:
-        with transaction.atomic():
-          lomakesarja.save(commit=True)
+        lomakesarja.save(commit=True)
       except ProtectedError as exc:
         virheteksti = _(
           'Rivin poisto epäonnistui:'
