@@ -174,9 +174,9 @@ def lisaa_lomakesarja(
       lomakesarja = getattr(self, tunnus)
       # Muodosta lomakekohtainen kentän etuliite poistamalla
       # liitetyn lomakkeen `prefixin` alusta
-      # käsillä olevan (ylä-) lomakkeen oma `prefix`.
+      # käsillä olevan (ylä-) lomakkeen oma `prefix` ja välimerkki -.
       lomakekohtainen_tunnus = (
-        lambda lomake: lomake.prefix.replace(self.prefix, "", 1)
+        lambda lomake: lomake.prefix.replace(self.prefix + "-", "", 1)
       ) if self.prefix else lambda lomake: lomake.prefix
       return super().changed_data + sum([[
         f'{lomakekohtainen_tunnus(lomake)}-{kentta}'
