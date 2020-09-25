@@ -123,7 +123,7 @@ def lisaa_lomakesarja(
       if any(lomakesarja.non_form_errors()):
         virheet.append([
           # Lisää lomakeriippumattomat virheet hallintolomakkeen kohdalle.
-          lomakesarja.prefix + '-TOTAL_FORMS',
+          tunnus + '-TOTAL_FORMS',
           lomakesarja.non_form_errors()
         ])
       return forms.utils.ErrorDict(virheet)
