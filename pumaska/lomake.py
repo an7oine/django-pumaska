@@ -120,10 +120,12 @@ def yhdista_lomakkeet(
       # def __iter__
 
     def __getitem__(self, item):
-      try:
+      if item.startswith(f'{tunnus}-'):
+        return getattr(self, tunnus).__getitem__(
+          item.partition(f'{tunnus}-')[2]
+        )
+      else:
         return super().__getitem__(item)
-      except KeyError:
-        return getattr(self, tunnus).__getitem__(item)
       # def __getitem__
 
     @property
@@ -205,13 +207,15 @@ def yhdista_lomakkeet(
     # `in`
 
     def __contains__(self, key):
+      if key.startswith(f'{tunnus}-'):
+        key = key.partition(f'{tunnus}-')[2]
+        if hasattr(getattr(self, tunnus), '__contains__') \
+        and getattr(self, tunnus).__contains__(key):
+          return True
+        return key in getattr(self, tunnus).Meta.fields
+        # if key.startswith
       if hasattr(super(), '__contains__') \
       and super().__contains__(key):
-        return True
-      elif hasattr(getattr(self, tunnus), '__contains__') \
-      and key in getattr(self, tunnus):
-        return True
-      elif key in getattr(self, tunnus).Meta.fields:
         return True
       else:
         return key in self.Meta.fields

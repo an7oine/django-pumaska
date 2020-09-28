@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=invalid-name
 
+from itertools import chain
+
 from django.db import transaction
 from django.db.models import ProtectedError
 from django import forms
@@ -107,8 +109,20 @@ def lisaa_lomakesarja(
     # def __str__(self)
     # def __repr__(self)
 
-    # def __iter__(self)
-    # def __getitem__(self, item)
+    def __iter__(self):
+      return chain(
+        super().__iter__(),
+        *(lomake.__iter__() for lomake in getattr(self, tunnus).__iter__()),
+      )
+      # def __iter__
+
+    def __getitem__(self, item):
+      if item.startswith(f'{tunnus}-'):
+        indeksi, _, item = item.partition(f'{tunnus}-')[2].partition('-')
+        return getattr(self, tunnus).__getitem__(int(indeksi)).__getitem__(item)
+      else:
+        return super().__getitem__(item)
+      # def __getitem__
 
     @property
     def errors(self):
@@ -191,6 +205,28 @@ def lisaa_lomakesarja(
     #def hidden_fields(self)
     #def visible_fields(self)
     #def get_initial_for_field(self, field, field_name)
+
+
+    # `in`
+
+    def __contains__(self, key):
+      if key.startswith(f'{tunnus}-'):
+        indeksi, _, key = key.partition(f'{tunnus}-')[2].partition('-')
+        if hasattr(
+          getattr(self, tunnus).__getitem__(int(indeksi)),
+          '__contains__'
+        ) and getattr(self, tunnus).__getitem__(int(indeksi)).__contains__(key):
+          return True
+        return key in getattr(self, tunnus).__getitem__(
+          int(indeksi)
+        ).Meta.fields
+        # if key.startswith
+      if hasattr(super(), '__contains__') \
+      and super().__contains__(key):
+        return True
+      else:
+        return key in self.Meta.fields
+      # def __contains__
 
 
     # ModelForm
