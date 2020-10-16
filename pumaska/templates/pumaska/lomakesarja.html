@@ -53,5 +53,8 @@
 </span>
 
 <script>
-  $(document.body).on("lisatty", ".{{ lomakesarja.riviluokka }}", function () {$(this).removeClass("tarkkailu-estetty"); });
+  $(".lomakesarja[data-prefix='{{ lomakesarja.prefix }}']").on(
+    "lisatty", ".lomakesarja-rivi",
+    function () { $(this).removeClass("tarkkailu-estetty"); }
+  );
 </script>
