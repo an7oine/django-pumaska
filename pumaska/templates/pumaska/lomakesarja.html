@@ -14,6 +14,7 @@
   >
   {% with lomakesarja.riviaihio|default:"pumaska/lomakesarja_rivi.html" as riviaihio %}
     {# Näytä olemassaolevat lomakkeet. #}
+    {% spaceless %}
     {% for sisakkainen_lomake in lomakesarja.forms %}
       <div class="lomakesarja-rivi {{ lomakesarja.riviluokka }}">
         {% for kentta in sisakkainen_lomake.hidden_fields %}
@@ -41,6 +42,7 @@
         {% endif %}
       </div>
     {% endwith %}
+    {% endspaceless %}
 
     {# Lomakesarjan mahdolliset virheet ja hallinnointilomake. #}
     <div class="container-fluid">
