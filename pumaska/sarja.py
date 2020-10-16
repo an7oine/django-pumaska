@@ -69,7 +69,7 @@ def lisaa_lomakesarja(
   if not hasattr(lomakesarja, 'palikka'):
     lomakesarja.palikka = 'pumaska/lomakesarja_lomakekenttana.html'
   if not hasattr(lomakesarja, 'riviluokka'):
-    lomakesarja.riviluokka = 'clearfix'
+    lomakesarja.riviluokka = 'panel panel-default clearfix'
   if not hasattr(lomakesarja, 'lisaa_painike'):
     lomakesarja.lisaa_painike = _('Lisää %(malli)s') % {
       'malli': LomakeB.Meta.model._meta.verbose_name

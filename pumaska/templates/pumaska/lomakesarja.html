@@ -15,9 +15,7 @@
   {% with lomakesarja.riviaihio|default:"pumaska/lomakesarja_rivi.html" as riviaihio %}
     {# Näytä olemassaolevat lomakkeet. #}
     {% for sisakkainen_lomake in lomakesarja.forms %}
-      <div
-        class="panel panel-default lomakesarja-rivi {{ lomakesarja.riviluokka }}"
-        >
+      <div class="lomakesarja-rivi {{ lomakesarja.riviluokka }}">
         {% for kentta in sisakkainen_lomake.hidden_fields %}
           {{ kentta }}
         {% endfor %}
@@ -33,9 +31,7 @@
 
     {# Lisää ylimääräinen lomake uusien rivien lisäämispohjaksi. #}
     {% with lomakesarja.empty_form as sisakkainen_lomake %}
-      <div
-        class="panel panel-default tarkkailu-estetty lomakesarja-rivi {{ lomakesarja.riviluokka }}"
-        >
+      <div class="lomakesarja-rivi tarkkailu-estetty {{ lomakesarja.riviluokka }}">
         {% for kentta in sisakkainen_lomake.hidden_fields %}
           {{ kentta }}
         {% endfor %}
