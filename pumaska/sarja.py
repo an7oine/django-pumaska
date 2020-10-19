@@ -17,6 +17,7 @@ def lisaa_lomakesarja(
   avain_b=None,
   tunnus=None,
   epasuora=False,
+  valita_parametrit=None,
   **kwargs
 ):
   '''
@@ -89,6 +90,11 @@ def lisaa_lomakesarja(
 
     def __init__(self, *args, prefix=None, **kwargs):
       lomakesarja_kwargs = kwargs.pop(f'{tunnus}_kwargs', {})
+      for param in (valita_parametrit or ()):
+        try:
+          lomakesarja_kwargs[param] = kwargs[param]
+        except KeyError:
+          pass
       super().__init__(*args, prefix=prefix, **kwargs)
       initial = {
         avain.replace(tunnus + '-', '', 1): arvo

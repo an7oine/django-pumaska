@@ -16,6 +16,7 @@ def yhdista_lomakkeet(
   avain_b=None,
   tunnus=None,
   pakollinen_b=None,
+  valita_parametrit=None,
 ):
   '''
   Yhdistää kaksi ModelForm-luokkaa silloin,
@@ -63,6 +64,11 @@ def yhdista_lomakkeet(
 
     def __init__(self, *args, prefix=None, **kwargs):
       lomake_kwargs = kwargs.pop(f'{tunnus}_kwargs', {})
+      for param in (valita_parametrit or ()):
+        try:
+          lomake_kwargs[param] = kwargs[param]
+        except KeyError:
+          pass
       super().__init__(*args, prefix=prefix, **kwargs)
       # Poimitaan B-kohde joko `initial`-sanakirjasta tai A-kohteen tiedoista.
       kohde_b = self.initial.get(tunnus, None)
