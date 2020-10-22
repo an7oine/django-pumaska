@@ -231,7 +231,7 @@ def lisaa_lomakesarja(
       and super().__contains__(key):
         return True
       else:
-        return key in self.Meta.fields
+        return key in self.fields
       # def __contains__
 
 
