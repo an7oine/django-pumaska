@@ -17,6 +17,7 @@ def lisaa_lomakesarja(
   avain_b=None,
   tunnus=None,
   epasuora=False,
+  lomakesarja_parametrit=None,
   valita_parametrit=None,
   **kwargs
 ):
@@ -24,11 +25,20 @@ def lisaa_lomakesarja(
   Yhdistää ModelForm-luokan ja toisesta ModelForm-luokasta
   muodostetun InlineFormSet-luokan silloin,
   kun B-luokasta on suora (ForeignKey) tai epäsuora (GenericForeignKey)
-  viittaus A-luokkaan
+  viittaus A-luokkaan.
+
   Args:
     LomakeA, LomakeB: mallikohtaiset lomakeluokat
+    avain_a, avain_b: viittaukset mallien välillä
     tunnus: yksikäsitteinen tunnus lomakesarjalle (oletus 'lomakesarja')
+    epasuora: käytetään `generic_inlineformset_factory`-funktiota?
+    lomakesarja_parametrit: parametrit, jotka asetetaan lomakesarjan määreiksi
+    valita_parametrit: ulomman lomakkeen parametrit, jotka välitetään
+      sellaisenaan lomakesarjalle
     *args, **kwargs: lisäparametrit ``inlineformset_factory``-funktiolle
+
+  Returns:
+    lomakeluokka
   '''
   # Pakotetaan ylimääräisten lomakkeiden määräksi nolla.
   kwargs['extra'] = 0
@@ -61,6 +71,10 @@ def lisaa_lomakesarja(
         return super().get_form_kwargs(index)
       # def get_form_kwargs
     # class lomakesarja
+
+  # Aseta mahdolliset lomakesarjan parametrit.
+  for avain, arvo in (lomakesarja_parametrit or {}).items():
+    setattr(lomakesarja, avain, arvo)
 
   # Lisää tarvittaessa oletusarvot HTML-piirtoa varten.
   if not hasattr(lomakesarja, 'label'):
