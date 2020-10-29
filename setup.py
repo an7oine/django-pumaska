@@ -1,17 +1,15 @@
 # -*- coding: utf-8 -*-
 
-import setuptools
+from setuptools import setup, find_packages
 
-setuptools._install_setup_requires({'setup_requires': ['git-versiointi']})
-from versiointi import asennustiedot
-
-setuptools.setup(
+setup(
+  setup_requires=['git-versiointi>=1.5rc4'],
   name='django-pumaska',
   description='Sisäkkäisten lomakkeiden ja -sarjojen käsittely',
   url='https://github.com/an7oine/django-pumaska',
   author='Antti Hautaniemi',
   author_email='antti.hautaniemi@pispalanit.fi',
-  packages=setuptools.find_packages(),
+  packages=find_packages(),
   include_package_data=True,
   entry_points={
     'django.sovellus': [
@@ -19,5 +17,4 @@ setuptools.setup(
     ],
   },
   zip_safe=False,
-  **asennustiedot(__file__),
 )
