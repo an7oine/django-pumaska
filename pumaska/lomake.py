@@ -104,6 +104,8 @@ def yhdista_lomakkeet(
         **lomake_kwargs
       )
       if avain_b in lomake_b.fields:
+        lomake_b.fields[avain_b].disabled = True
+        lomake_b.fields[avain_b].required = False
         lomake_b.fields[avain_b].widget = forms.HiddenInput()
       setattr(self, tunnus, lomake_b)
       # Jos B-viittaus saa olla tyhjä, nollataan kenttien
