@@ -53,8 +53,9 @@ class Testi(SimpleTestCase):
       self.assertEqual(tietue, next(tietueet))
       # def tallenna
     with patch('django.db.transaction.Atomic.__enter__'):
-      with patch('django.db.models.base.Model.save', tallenna):
-        yield
+      with patch('django.db.transaction.Atomic.__exit__'):
+        with patch('django.db.models.base.Model.save', tallenna):
+          yield
     self.assertRaises(StopIteration, next, tietueet)
     # def varmista_tietueiden_tallennus
 
