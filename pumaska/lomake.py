@@ -108,12 +108,16 @@ def yhdista_lomakkeet(
         lomake_b.fields[avain_b].required = False
         lomake_b.fields[avain_b].widget = forms.HiddenInput()
       setattr(self, tunnus, lomake_b)
-      # Jos B-viittaus saa olla tyhjä, nollataan kenttien
-      # pakollisuus GET-pyynnöllä:
-      # - myös mahdollisten sisäkkäisten lomakkeiden kentät
-      if not pakollinen_b and not self.data:
+      # Jos B-viittaus saa olla tyhjä, asetetaan kaikki B-lomakkeen
+      # kentät valinnaisiksi GET-pyynnöllä.
+      # – Huomaa, että tämä koskee myös mahdollisten sisäkkäisten
+      # lomakkeiden (C) kenttiä.
+      # Lisäksi ohitetaan vimpainten `required`-määreen tulostus.
+      if not pakollinen_b:
         for kentta in lomake_b:
-          kentta.field.required = False
+          if not self.data:
+            kentta.field.required = False
+          kentta.field.widget.use_required_attribute = lambda initial: False
       # def __init__
 
     # def order_fields(self, field_order)
