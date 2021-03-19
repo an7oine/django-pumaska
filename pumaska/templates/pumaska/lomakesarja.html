@@ -46,9 +46,20 @@
 
     {# Lomakesarjan mahdolliset virheet ja hallinnointilomake. #}
     <div class="container-fluid">
-      {{ lomakesarja.non_form_errors }}
       {{ lomakesarja.management_form }}
     </div>
+
+    {% if lomakesarja.non_form_errors %}
+      <script>
+        $(".lomakesarja[data-prefix='{{ lomakesarja.prefix }}']").closest(
+          ".form-group, .row, .container, .container-fluid"
+        ).addClass("has-error").append(
+          {% for virhe in lomakesarja.non_form_errors %}
+            $("<span/>", {class: "help-block datavirhe"}).text("{{ virhe }}"),
+          {% endfor %}
+        );
+      </script>
+    {% endif %}
   {% endwith %}
 </span>
 
