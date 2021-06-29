@@ -43,6 +43,10 @@ def lisaa_lomakesarja(
   # Pakotetaan ylimääräisten lomakkeiden määräksi nolla.
   kwargs['extra'] = 0
 
+  assert tunnus or avain_a or avain_b, (
+    'Joko `tunnus`, `avain_a` tai `avain_b` on määriteltävä.'
+  )
+
   if epasuora:
     from django.contrib.contenttypes.forms import generic_inlineformset_factory
     lomakesarja = generic_inlineformset_factory(

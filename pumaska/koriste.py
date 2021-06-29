@@ -61,10 +61,10 @@ def nido(*args, **kwargs):
 
   if useita:
     from django.contrib.contenttypes.fields import GenericForeignKey
-    kwargs['epasuora'] = isinstance(
+    kwargs.setdefault('epasuora', isinstance(
       lomake_b.Meta.model._meta.get_field(avain_b),
       GenericForeignKey,
-    )
+    ) if avain_b is not None else False)
 
   return (lisaa_lomakesarja if useita else yhdista_lomakkeet)(*args, **kwargs)
   # def nido
