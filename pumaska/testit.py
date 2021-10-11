@@ -13,8 +13,14 @@ from django.test import SimpleTestCase
 from pumaska import nido
 
 
+class Edustaja(models.Model):
+  nimi = models.CharField(max_length=255)
+
 class Asiakas(models.Model):
   nimi = models.CharField(max_length=255)
+  edustaja = models.OneToOneField(
+    Edustaja, on_delete=models.SET_NULL, null=True, blank=True
+  )
 
 class Asiakasosoite(models.Model):
   asiakas = models.ForeignKey(Asiakas, on_delete=models.CASCADE)
@@ -189,5 +195,55 @@ class Testi(SimpleTestCase):
     )):
       lomake.save()
     # def testaa_koristeena
+
+  def testaa_ab(self):
+    'Toimiiko A-->B -liitos silloin, kun molemmat ovat uusia?'
+    class Edustajalomake(forms.ModelForm):
+      class Meta:
+        model = Edustaja
+        fields = ['nimi']
+
+    @nido(Edustajalomake)
+    class Asiakaslomake(forms.ModelForm):
+      class Meta:
+        model = Asiakas
+        fields = ['nimi']
+
+    lomake = Asiakaslomake(data={
+      'nimi': 'Assi Asiakas',
+      'edustaja-nimi': 'Kaupparatsu Huikkanen',
+    })
+    self.assertTrue(lomake.is_valid())
+    with self.varmista_tietueiden_tallennus((
+      {'__class__': 'Asiakas', 'nimi': 'Assi Asiakas'},
+      {'__class__': 'Edustaja', 'nimi': 'Kaupparatsu Huikkanen'},
+    )):
+      lomake.save()
+    # def testaa_ab
+
+  def testaa_ba(self):
+    'Toimiiko B-->A -liitos silloin, kun molemmat ovat uusia?'
+    class Asiakaslomake(forms.ModelForm):
+      class Meta:
+        model = Asiakas
+        fields = ['nimi']
+
+    @nido(Asiakaslomake)
+    class Edustajalomake(forms.ModelForm):
+      class Meta:
+        model = Edustaja
+        fields = ['nimi']
+
+    lomake = Edustajalomake(data={
+      'nimi': 'Kaupparatsu Huikkanen',
+      'asiakas-nimi': 'Assi Asiakas',
+    })
+    self.assertTrue(lomake.is_valid())
+    with self.varmista_tietueiden_tallennus((
+      {'__class__': 'Edustaja', 'nimi': 'Kaupparatsu Huikkanen'},
+      {'__class__': 'Asiakas', 'nimi': 'Assi Asiakas'},
+    )):
+      lomake.save()
+    # def testaa_ab
 
   # class Testi
