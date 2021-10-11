@@ -42,21 +42,35 @@ class Testi(SimpleTestCase):
     täsmälleen annettuja sanakirjoja vastaavat tietueet
     annetussa järjestyksessä.
     '''
-    tietueet = iter(tietueet)
-    def tallenna(self2):
+    tietueet = iter(enumerate(tietueet))
+    tallennettu = set()
+    def tallenna(self2, **kwargs):
+      # print('tallennetaan', type(self2).__name__, self2.__dict__)
+      if (type(self2).__name__, self2.pk) in tallennettu:
+        return
       tietue = {'__class__': type(self2).__name__, **{
         k: v for k, v in self2.__dict__.items()
         if k not in ('id', '_state')
         and not k.endswith('_id')
         and not isinstance(v, models.Model)
       }}
-      self.assertEqual(tietue, next(tietueet))
+      self2.pk, seuraava_tietue = next(tietueet)
+      self.assertEqual(tietue, seuraava_tietue)
+      tallennettu.add((type(self2).__name__, self2.pk))
       # def tallenna
-    with patch('django.db.transaction.Atomic.__enter__'):
-      with patch('django.db.transaction.Atomic.__exit__'):
-        with patch('django.db.models.base.Model.save', tallenna):
+    with patch('django.db.transaction.Atomic.__enter__', lambda *args: None):
+      with patch('django.db.transaction.Atomic.__exit__', lambda *args: None):
+        with patch('django.db.models.base.Model.save_base', tallenna):
           yield
-    self.assertRaises(StopIteration, next, tietueet)
+    try:
+      tietueet = [next(tietueet)] + list(tietueet)
+    except StopIteration:
+      pass
+    else:
+      tietueet = '\n  '.join(map(str, [''] + [t[1] for t in tietueet]))
+      raise AssertionError(
+        f'tietueet sisältää ylimääräisiä arvoja:{tietueet}'
+      )
     # def varmista_tietueiden_tallennus
 
   def testaa_html(self):
