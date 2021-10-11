@@ -272,7 +272,7 @@ def yhdista_lomakkeet(
               raise
             kohde_b = vanha_kohde_b
 
-          # Asetetaan tarvittaessa linkki A-->B ja tallennetaan A
+          # Asetetaan tarvittaessa linkki A-->B ja tallennetaan A (uudelleen).
           if avain_a:
             setattr(kohde_a, avain_a, kohde_b)
             kohde_a.save()
@@ -287,6 +287,9 @@ def yhdista_lomakkeet(
 
     @transaction.atomic
     def save(self, commit=True):
+      # pylint: disable=access-member-before-definition
+      # pylint: disable=attribute-defined-outside-init
+
       # Jos viittaus A-->B ei voi olla tyhjä, tallennetaan B ensin
       # (muussa tapauksessa B tallennetaan lopuksi `_save_m2m`-metodissa)
       if avain_a and not self.Meta.model._meta.get_field(avain_a).null:
@@ -313,8 +316,24 @@ def yhdista_lomakkeet(
             # def save
           self.instance.save = types.MethodType(save, self.instance)
           # if not commit and kohde_b and not kohde_b.pk
+        return super().save(commit=commit)
 
-      return super().save(commit=commit)
+      else:
+        # Mikäli B on uusi ja A-->B voi olla tyhjä,
+        # korvataan A.B arvolla None ennen A:n tallennusta.
+        # Palautetaan tallennuksen jälkeen A.B = B.
+        # B tallennetaan lopuksi `_save_m2m`-metodissa.
+        # Django vaatii tämän A:n tallentamiseksi; ks.
+        # django.db.models.base:Model._prepare_related_fields_for_save.
+        lomake_b = getattr(self, tunnus)
+        if lomake_b.instance.pk is not None:
+          return super().save(commit=commit)
+        setattr(self.instance, avain_a, None)
+        self.instance = super().save(commit=commit)
+        setattr(self.instance, avain_a, lomake_b.instance)
+        return self.instance
+        # else
+
       # def save
 
     # class YhdistettyLomake
