@@ -319,14 +319,14 @@ def yhdista_lomakkeet(
         return super().save(commit=commit)
 
       else:
-        # Mikäli B on uusi ja A-->B voi olla tyhjä,
-        # korvataan A.B arvolla None ennen A:n tallennusta.
+        # Mikäli B on uusi, viittaus A.B on olemassa ja tämä voi olla
+        # tyhjä, korvataan A.B arvolla None ennen A:n tallennusta.
         # Palautetaan tallennuksen jälkeen A.B = B.
         # B tallennetaan lopuksi `_save_m2m`-metodissa.
         # Django vaatii tämän A:n tallentamiseksi; ks.
         # django.db.models.base:Model._prepare_related_fields_for_save.
         lomake_b = getattr(self, tunnus)
-        if lomake_b.instance.pk is not None:
+        if avain_a is None or lomake_b.instance.pk is not None:
           return super().save(commit=commit)
         setattr(self.instance, avain_a, None)
         self.instance = super().save(commit=commit)
