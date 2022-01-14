@@ -184,6 +184,15 @@ def lisaa_lomakesarja(
       })
       # def _html_output
 
+    # Django 4.0+.
+    def render(self, *args, **kwargs):
+      return super().render(*args, **kwargs) \
+      + loader.get_template('pumaska/lomakesarja.html').render({
+        'tunnus': tunnus,
+        'lomakesarja': getattr(self, tunnus),
+      })
+      # def render
+
     # def as_table(self)
     # def as_ul(self)
     # def as_p(self)
