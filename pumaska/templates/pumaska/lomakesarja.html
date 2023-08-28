@@ -10,6 +10,7 @@
   data-prefix="{{ lomakesarja.prefix }}"
   data-lisaa-painike="{{ lomakesarja.lisaa_painike }}"
   data-poista-painike="{{ lomakesarja.poista_painike }}"
+  data-poistettava="{{ lomakesarja.can_delete|yesno:"true,false" }}"
   data-jarjestettava="{{ lomakesarja.can_order|yesno:"true,false" }}"
   >
   {% with lomakesarja.riviaihio|default:"pumaska/lomakesarja_rivi.html" as riviaihio %}
