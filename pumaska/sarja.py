@@ -2,6 +2,7 @@
 # pylint: disable=invalid-name
 
 from itertools import chain
+import re
 
 from django.db import transaction
 from django.db.models import ProtectedError
@@ -9,6 +10,11 @@ from django import forms
 from django.template import loader
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
+
+
+# Mallin nimen poiminta Djangon ProtectedError-poikkeusoliosta.
+# Ks. django/db/models/deletion.py; `Collector.collect`-metodi.
+mallin_nimi = re.compile(r'Cannot delete some instances of model ([^ ]+)')
 
 
 def lisaa_lomakesarja(
@@ -283,15 +289,20 @@ def lisaa_lomakesarja(
       try:
         lomakesarja.save(commit=True)
       except ProtectedError as exc:
-        virheteksti = _(
-          'Rivin poisto epäonnistui:'
-          ' suojattuja, riippuvia %(malli)s-kohteita.'
-        ) % {'malli': exc.protected_objects.model._meta.verbose_name}
-        # pylint: disable=protected-access
-        lomakesarja._non_form_errors.append(forms.ValidationError(
-          virheteksti, code='protect'
-        ))
-        raise forms.ValidationError(exc)
+        try:
+          mallin_nimi = mallin_nimi.match(str(exc))[1]
+        except (TypeError, KeyError):
+          exc2 = forms.ValidationError(str(exc), code='protect')
+        else:
+          exc2 = forms.ValidationError(
+            _(
+              'Rivin poisto epäonnistui:'
+              ' suojattuja, riippuvia %(malli)s-kohteita.'
+            ) % {'malli': mallin_nimi},
+            code='protect',
+          )
+        lomakesarja._non_form_errors.append(exc2)
+        raise exc2 from exc
       # def _save_m2m
 
     # class YhdistettyLomake
