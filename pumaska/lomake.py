@@ -236,13 +236,13 @@ def yhdista_lomakkeet(
         if hasattr(getattr(self, tunnus), '__contains__') \
         and getattr(self, tunnus).__contains__(key):
           return True
-        return key in getattr(self, tunnus).Meta.fields
+        return key in getattr(self, tunnus).fields
         # if key.startswith
       if hasattr(super(), '__contains__') \
       and super().__contains__(key):
         return True
       else:
-        return key in self.Meta.fields
+        return key in self.fields
       # def __contains__
 
 
