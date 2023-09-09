@@ -91,6 +91,12 @@ def yhdista_lomakkeet(
         f'Kohde B ei voi olla tyyppiä {type(kohde_b)} != {LomakeB.Meta.model}!'
       )
 
+      # Välitetään A-lomakkeen vedostaja oletuksena
+      # B-lomakkeelle.
+      lomake_kwargs.setdefault(
+        'renderer', self.renderer
+      )
+
       lomake_b = LomakeB(
         instance=kohde_b,
         data=kwargs.get('data'),

@@ -133,6 +133,11 @@ def lisaa_lomakesarja(
         prefix=f'{self.prefix}-{tunnus}' if self.prefix else tunnus,
         **lomakesarja_kwargs,
       ))
+
+      # Välitetään A-lomakkeen vedostaja automaattisesti
+      # lomakesarjalle, joka välittää sen kullekin
+      # lomakkeelle.
+      lomakesarja.renderer = self.renderer
       # def __init__
 
     # def order_fields(self, field_order)
