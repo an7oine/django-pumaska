@@ -11,6 +11,8 @@ from django.template import loader
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
+from .piirto import Piirto
+
 
 # Mallin nimen poiminta Djangon ProtectedError-poikkeusoliosta.
 # Ks. django/db/models/deletion.py; `Collector.collect`-metodi.
@@ -134,10 +136,9 @@ def lisaa_lomakesarja(
         **lomakesarja_kwargs,
       ))
 
-      # Välitetään A-lomakkeen vedostaja automaattisesti
-      # lomakesarjalle, joka välittää sen kullekin
-      # lomakkeelle.
-      lomakesarja.renderer = self.renderer
+      # Käytetään A-lomakkeen vedostajaa myös lomakesarjalle,
+      # joka välittää sen kullekin lomakkeelle.
+      lomakesarja.renderer = Piirto(self)
       # def __init__
 
     # def order_fields(self, field_order)

@@ -9,6 +9,8 @@ from django import forms
 from django.utils.functional import cached_property
 from django.utils.module_loading import import_string
 
+from .piirto import Piirto
+
 
 def yhdista_lomakkeet(
   LomakeA, LomakeB, *,
@@ -91,11 +93,14 @@ def yhdista_lomakkeet(
         f'Kohde B ei voi olla tyyppiä {type(kohde_b)} != {LomakeB.Meta.model}!'
       )
 
-      # Välitetään A-lomakkeen vedostaja oletuksena
-      # B-lomakkeelle.
-      lomake_kwargs.setdefault(
-        'renderer', self.renderer
-      )
+      # Käytetään A-lomakkeen vedostajaa oletuksena
+      # myös B-lomakkeella.
+      # Huomaa, että Django vaatii, että `renderer` periytyy
+      # lomakeluokan mahdollisesta `default_renderer`-luokasta.
+      if not 'renderer' in lomake_kwargs:
+        class PiirtoB(Piirto, LomakeB=LomakeB): pass
+        lomake_kwargs['renderer'] = PiirtoB(self)
+        # if not 'renderer' in lomake_kwargs
 
       lomake_b = LomakeB(
         instance=kohde_b,
