@@ -193,12 +193,6 @@ def yhdista_lomakkeet(
       + getattr(self, tunnus)._html_output(*args, **kwargs)
       # def _html_output
 
-    # Django 4.0+.
-    def render(self, *args, **kwargs):
-      return super().render(*args, **kwargs) \
-      + getattr(self, tunnus).render(*args, **kwargs)
-      # def render
-
     # def as_table(self)
     # def as_ul(self)
     # def as_p(self)
