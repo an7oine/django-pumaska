@@ -102,6 +102,11 @@ def yhdista_lomakkeet(
         lomake_kwargs['renderer'] = PiirtoB(self)
         # if not 'renderer' in lomake_kwargs
 
+      # Asetetaan B-lomakkeen oletus-`prefix`.
+      lomake_kwargs.setdefault(
+        'prefix', f'{self.prefix}-{tunnus}' if self.prefix else tunnus
+      )
+
       lomake_b = LomakeB(
         instance=kohde_b,
         data=kwargs.get('data'),
@@ -111,7 +116,6 @@ def yhdista_lomakkeet(
           for avain, arvo in self.initial.items()
           if avain.startswith(tunnus + '-') and avain != tunnus + '-'
         },
-        prefix=f'{self.prefix}-{tunnus}' if self.prefix else tunnus,
         **lomake_kwargs
       )
       if avain_b in lomake_b.fields:
