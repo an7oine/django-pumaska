@@ -153,7 +153,9 @@ def lisaa_lomakesarja(
       # def __iter__
 
     def __getitem__(self, item):
-      if item.startswith(f'{tunnus}-'):
+      if item == tunnus:
+        return getattr(self, tunnus)
+      elif item.startswith(f'{tunnus}-'):
         indeksi, _, item = item.partition(f'{tunnus}-')[2].partition('-')
         return getattr(self, tunnus).__getitem__(int(indeksi)).__getitem__(item)
       else:
@@ -255,7 +257,9 @@ def lisaa_lomakesarja(
     # `in`
 
     def __contains__(self, key):
-      if key.startswith(f'{tunnus}-'):
+      if key == tunnus:
+        return True
+      elif key.startswith(f'{tunnus}-'):
         indeksi, _, key = key.partition(f'{tunnus}-')[2].partition('-')
         if hasattr(
           getattr(self, tunnus).__getitem__(int(indeksi)),

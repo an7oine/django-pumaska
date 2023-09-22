@@ -147,7 +147,9 @@ def yhdista_lomakkeet(
       # def __iter__
 
     def __getitem__(self, item):
-      if item.startswith(f'{tunnus}-'):
+      if item == tunnus:
+        return getattr(self, tunnus)
+      elif item.startswith(f'{tunnus}-'):
         return getattr(self, tunnus).__getitem__(
           item.partition(f'{tunnus}-')[2]
         )
@@ -240,14 +242,16 @@ def yhdista_lomakkeet(
     # `in`
 
     def __contains__(self, key):
-      if key.startswith(f'{tunnus}-'):
+      if key == tunnus:
+        return True
+      elif key.startswith(f'{tunnus}-'):
         key = key.partition(f'{tunnus}-')[2]
         if hasattr(getattr(self, tunnus), '__contains__') \
         and getattr(self, tunnus).__contains__(key):
           return True
         return key in getattr(self, tunnus).fields
         # if key.startswith
-      if hasattr(super(), '__contains__') \
+      elif hasattr(super(), '__contains__') \
       and super().__contains__(key):
         return True
       else:
