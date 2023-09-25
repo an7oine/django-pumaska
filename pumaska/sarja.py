@@ -110,6 +110,12 @@ def lisaa_lomakesarja(
     LomakeB.Meta.model._meta.get_field(avain_b).remote_field.name
   )
 
+  if tunnus in LomakeA.base_fields:
+    raise RuntimeError(
+      f'Lomakesarjaa ei voida nitoa samalla nimellä'
+      f' kuin olemassaoleva lomakekenttä: {tunnus}'
+    )
+
   class YhdistettyLomake(LomakeA):
     class Meta(LomakeA.Meta):
       pass

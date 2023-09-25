@@ -52,6 +52,12 @@ def yhdista_lomakkeet(
   kentta_b = LomakeB.Meta.model._meta.get_field(avain_b)
   tunnus = tunnus or avain_a or kentta_b.remote_field.name
 
+  if tunnus in LomakeA.base_fields:
+    raise RuntimeError(
+      f'Sisempää lomaketta ei voida nitoa samalla nimellä'
+      f' kuin olemassaoleva lomakekenttä: {tunnus}'
+    )
+
   # Mikäli A-avainta ei ole annettu,
   # B-lomake on oletuksena valinnainen.
   # Muutoin haetaan oletus vastaavan kentän tiedoista.
