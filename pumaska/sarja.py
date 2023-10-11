@@ -133,14 +133,14 @@ def lisaa_lomakesarja(
         for avain, arvo in self.initial.items()
         if avain.startswith(tunnus + '-') and avain != tunnus + '-'
       }
-      setattr(self, tunnus, lomakesarja(
-        data=kwargs.get('data'),
-        files=kwargs.get('files'),
-        instance=self.instance,
-        initial=[initial] if initial else [],
-        prefix=f'{self.prefix}-{tunnus}' if self.prefix else tunnus,
+      setattr(self, tunnus, lomakesarja(**{
+        'data': kwargs.get('data'),
+        'files': kwargs.get('files'),
+        'instance': self.instance,
+        'initial': [initial] if initial else [],
+        'prefix': f'{self.prefix}-{tunnus}' if self.prefix else tunnus,
         **lomakesarja_kwargs,
-      ))
+      }))
 
       # Käytetään A-lomakkeen vedostajaa myös lomakesarjalle,
       # joka välittää sen kullekin lomakkeelle.

@@ -113,17 +113,17 @@ def yhdista_lomakkeet(
         'prefix', f'{self.prefix}-{tunnus}' if self.prefix else tunnus
       )
 
-      lomake_b = LomakeB(
-        instance=kohde_b,
-        data=kwargs.get('data'),
-        files=kwargs.get('files'),
-        initial={
+      lomake_b = LomakeB(**{
+        'instance': kohde_b,
+        'data': kwargs.get('data'),
+        'files': kwargs.get('files'),
+        'initial': {
           avain.replace(tunnus + '-', '', 1): arvo
           for avain, arvo in self.initial.items()
           if avain.startswith(tunnus + '-') and avain != tunnus + '-'
         },
         **lomake_kwargs
-      )
+      })
       if avain_b in lomake_b.fields:
         lomake_b.fields[avain_b].disabled = True
         lomake_b.fields[avain_b].required = False
