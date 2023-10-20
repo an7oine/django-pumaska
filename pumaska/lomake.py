@@ -230,8 +230,9 @@ def yhdista_lomakkeet(
       ]
       # def changed_data
 
-    #@property
-    #def media(self)
+    @property
+    def media(self):
+      return super().media + getattr(self, tunnus).media
 
     #def is_multipart(self)
     #def hidden_fields(self)
