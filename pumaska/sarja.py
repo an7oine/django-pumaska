@@ -247,7 +247,14 @@ def lisaa_lomakesarja(
       return super().media + getattr(self, tunnus).media
 
     #def is_multipart(self)
-    #def hidden_fields(self)
+
+    def hidden_fields(self):
+      return [
+        f for f in super().hidden_fields()
+        if f.form is self
+      ]
+      # def hidden_fields
+
     #def visible_fields(self)
     #def get_initial_for_field(self, field, field_name)
 
