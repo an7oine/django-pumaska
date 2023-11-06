@@ -370,5 +370,7 @@ def yhdista_lomakkeet(
 
     # class YhdistettyLomake
 
+  YhdistettyLomake.__name__ += f'_{tunnus}'
+  YhdistettyLomake.__qualname__ += f'_{tunnus}'
   return YhdistettyLomake
   # def yhdista_lomakkeet

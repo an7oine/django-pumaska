@@ -322,5 +322,7 @@ def lisaa_lomakesarja(
 
     # class YhdistettyLomake
 
+  YhdistettyLomake.__name__ += f'_{tunnus}'
+  YhdistettyLomake.__qualname__ += f'_{tunnus}'
   return YhdistettyLomake
   # def lisaa_lomakesarja
