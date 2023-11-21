@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=invalid-name
 
+import functools
 from itertools import chain
 import re
 
-from django.db import transaction
 from django.db.models import ProtectedError
 from django import forms
 from django.template import loader
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 
-from .piirto import Piirto
+from .nidottu import yhdistetty_lomake
 
 
 # Mallin nimen poiminta Djangon ProtectedError-poikkeusoliosta.
@@ -19,8 +19,10 @@ from .piirto import Piirto
 mallin_nimi = re.compile(r'Cannot delete some instances of model ([^ ]+)')
 
 
+@functools.wraps(yhdistetty_lomake)
 def lisaa_lomakesarja(
-  LomakeA, LomakeB, *,
+  LomakeA, LomakeB,
+  *,
   avain_a=None,
   avain_b=None,
   tunnus=None,
@@ -116,54 +118,48 @@ def lisaa_lomakesarja(
       f' kuin olemassaoleva lomakekenttä: {tunnus}'
     )
 
-  class YhdistettyLomake(LomakeA):
-    class Meta(LomakeA.Meta):
-      pass
+  def liitos_kwargs(self: LomakeA):
+    initial = {
+      avain.replace(tunnus + '-', '', 1): arvo
+      for avain, arvo in self.initial.items()
+      if avain.startswith(tunnus + '-') and avain != tunnus + '-'
+    }
+    assert isinstance(self.instance, self.Meta.model), (
+      f'Kohde A ei voi olla tyyppiä {type(self.instance)} != {self.Meta.model}!'
+    )
+    return {
+      'initial': [initial] if initial else [],
+      'instance': self.instance,
+    }
+    # def liitos_kwargs
 
-    def __init__(self, *args, prefix=None, **kwargs):
-      lomakesarja_kwargs = kwargs.pop(f'{tunnus}_kwargs', {})
-      for param in (valita_parametrit or ()):
-        try:
-          lomakesarja_kwargs[param] = kwargs[param]
-        except KeyError:
-          pass
-      super().__init__(*args, prefix=prefix, **kwargs)
-      initial = {
-        avain.replace(tunnus + '-', '', 1): arvo
-        for avain, arvo in self.initial.items()
-        if avain.startswith(tunnus + '-') and avain != tunnus + '-'
-      }
-      setattr(self, tunnus, lomakesarja(**{
-        **({
-          'data': self.data,
-          'files': self.files,
-        } if self.is_bound else {}),
-        'instance': self.instance,
-        'initial': [initial] if initial else [],
-        'prefix': f'{self.prefix}-{tunnus}' if self.prefix else tunnus,
-        **lomakesarja_kwargs,
-      }))
-
-      # Käytetään A-lomakkeen vedostajaa myös lomakesarjalle,
-      # joka välittää sen kullekin lomakkeelle.
-      lomakesarja.renderer = Piirto(self)
-      # def __init__
-
-    # def order_fields(self, field_order)
-    # def __str__(self)
-    # def __repr__(self)
+  YhdistettyLomake = lisaa_lomakesarja.__wrapped__(
+    LomakeA, lomakesarja,
+    tunnus=tunnus,
+    liitos_kwargs=liitos_kwargs,
+    valita_parametrit=valita_parametrit,
+  )
+  @functools.wraps(YhdistettyLomake, updated=())
+  class YhdistettyLomake(YhdistettyLomake):
+    # pylint: disable=function-redefined
 
     def __iter__(self):
+      '''
+      Ohitetaan super. Tuotetaan A-lomakkeen ja kunkin B-lomakkeen kentät.
+      '''
       return chain(
-        super().__iter__(),
+        # super().__iter__(),
+        LomakeA.__iter__(self),
         *(lomake.__iter__() for lomake in getattr(self, tunnus).__iter__()),
       )
       # def __iter__
 
     def __getitem__(self, item):
-      if item == tunnus:
-        return getattr(self, tunnus)
-      elif item.startswith(f'{tunnus}-'):
+      '''
+      Haetaan kunkin indeksoidun lomakkeen kentät erikseen; muuten käytetään
+      super-toteutusta.
+      '''
+      if item.startswith(f'{tunnus}-'):
         indeksi, _, item = item.partition(f'{tunnus}-')[2].partition('-')
         return getattr(self, tunnus).__getitem__(int(indeksi)).__getitem__(item)
       else:
@@ -172,7 +168,11 @@ def lisaa_lomakesarja(
 
     @property
     def errors(self):
-      virheet = list(super().errors.items())
+      '''
+      Ohitetaan super. Tuotetaan A-lomakkeen, kunkin B-lomakkeen sekä
+      lomakesarjan omat virheet.
+      '''
+      virheet = list(LomakeA.errors.fget(self).items())
       lomakesarja = getattr(self, tunnus)
       for indeksi, lomake in enumerate(lomakesarja.forms):
         if lomake not in lomakesarja.deleted_forms:
@@ -189,17 +189,14 @@ def lisaa_lomakesarja(
       return forms.utils.ErrorDict(virheet)
       # def errors
 
-    def is_valid(self):
-      return super().is_valid() and (
-        getattr(self, tunnus).is_valid()
-        or not getattr(self, tunnus).has_changed()
-      )
-      # def is_valid
-
-    # def add_prefix(self, field_name)
-    # def add_initial_prefix(self, field_name)
-
     def _html_output(self, *args, **kwargs):
+      '''
+      Tuotetaan super-tuloste (A-lomake) sekä lomakesarjan perustoteutus:
+      - kukin olemassaoleva B-lomake,
+      - tyhjä B-lomake uuden lisäämiseksi,
+      - hallintolomake ja
+      - tarvittava Javascript rivien poistoon ja lisäämiseen.
+      '''
       # pylint: disable=protected-access
       return super()._html_output(*args, **kwargs) \
       + loader.get_template('pumaska/lomakesarja.html').render({
@@ -208,30 +205,11 @@ def lisaa_lomakesarja(
       })
       # def _html_output
 
-    # def as_table(self)
-    # def as_ul(self)
-    # def as_p(self)
-    # def non_field_errors(self)
-    # def add_error(self, field, error)
-    # def has_error(self, field, code=None)
-    # def full_clean(self)
-    # def _clean_fields(self)
-    # def _clean_form(self)
-    # def _post_clean(self)
-    # def clean(self)
-
-    def has_changed(self):
-      return super().has_changed() \
-      or getattr(self, tunnus).has_changed()
-      # def has_changed
-
     @cached_property
     def changed_data(self):
       '''
-      Palauta ylälomakkeen omien muutosten lisäksi
-      liitoslomakkeiden mahdolliset muutokset
-      lomakesarjan määrittämillä, lomakekohtaisella
-      etuliitteillä varustettuina.
+      Palauta A-lomakkeen muuttuneet kentät (super) sekä kunkin B-lomakkeen
+      mahdolliset muuttuneet kentät.
       '''
       lomakesarja = getattr(self, tunnus)
       # Muodosta lomakekohtainen kentän etuliite poistamalla
@@ -246,61 +224,18 @@ def lisaa_lomakesarja(
       ] for lomake in lomakesarja], [])
       # def changed_data
 
-    @property
-    def media(self):
-      return super().media + getattr(self, tunnus).media
-
-    #def is_multipart(self)
-
-    def hidden_fields(self):
-      return [
-        f for f in super().hidden_fields()
-        if f.form is self
-      ]
-      # def hidden_fields
-
-    #def visible_fields(self)
-    #def get_initial_for_field(self, field, field_name)
-
-
-    # `in`
-
-    def __contains__(self, key):
-      if key == tunnus:
-        return True
-      elif key.startswith(f'{tunnus}-'):
-        indeksi, _, key = key.partition(f'{tunnus}-')[2].partition('-')
-        if hasattr(
-          getattr(self, tunnus).__getitem__(int(indeksi)),
-          '__contains__'
-        ) and getattr(self, tunnus).__getitem__(int(indeksi)).__contains__(key):
-          return True
-        return key in getattr(self, tunnus).__getitem__(
-          int(indeksi)
-        ).Meta.fields
-        # if key.startswith
-      if hasattr(super(), '__contains__') \
-      and super().__contains__(key):
-        return True
-      else:
-        return key in self.fields
-      # def __contains__
-
 
     # ModelForm
-
-    @transaction.atomic
-    def save(self, commit=True):
-      '''
-      Tallennetaan atomaarisena tietokantaoperaationa.
-      '''
-      return super().save(commit=commit)
-      # def save
 
     def _save_m2m(self):
       '''
       Tallennetaan M2M-kohteet `super`-toteutuksen mukaisesti.
       Tämän jälkeen tallennetaan lomakesarja.
+
+      Mikäli olemassaolevien rivien poisto epäonnistuu mallin tasolla
+      `ProtectedError`-poikkeuksen takia, parsitaan tämän poikkeuksen
+      viestitekstistä riippuvan mallin nimi ja tuotetaan vastaava
+      `ValidationError`.
       '''
       super()._save_m2m()
       lomakesarja = getattr(self, tunnus)
@@ -309,7 +244,7 @@ def lisaa_lomakesarja(
         lomakesarja.save(commit=True)
       except ProtectedError as exc:
         try:
-          mallin_nimi = mallin_nimi.match(str(exc))[1]
+          _mallin_nimi = mallin_nimi.match(str(exc))[1]
         except (TypeError, KeyError):
           exc2 = forms.ValidationError(str(exc), code='protect')
         else:
@@ -317,7 +252,7 @@ def lisaa_lomakesarja(
             _(
               'Rivin poisto epäonnistui:'
               ' suojattuja, riippuvia %(malli)s-kohteita.'
-            ) % {'malli': mallin_nimi},
+            ) % {'malli': _mallin_nimi},
             code='protect',
           )
         lomakesarja._non_form_errors.append(exc2)
@@ -326,7 +261,5 @@ def lisaa_lomakesarja(
 
     # class YhdistettyLomake
 
-  YhdistettyLomake.__name__ += f'_{tunnus}'
-  YhdistettyLomake.__qualname__ += f'_{tunnus}'
   return YhdistettyLomake
   # def lisaa_lomakesarja

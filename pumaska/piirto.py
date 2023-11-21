@@ -1,6 +1,6 @@
 class PiirtoMeta(type):
   def __new__(mcs, name, bases, attrs, *, LomakeB):
-    if LomakeB and LomakeB.default_renderer:
+    if getattr(LomakeB, 'default_renderer', False):
       bases = (LomakeB.default_renderer, *bases)
     return super().__new__(mcs, name, bases, attrs)
   # class PiirtoMeta

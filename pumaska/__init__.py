@@ -1,3 +1,2 @@
-# -*- coding: utf-8 -*-
-
 from .koriste import nido
+from .nidottu import yhdistetty_lomake

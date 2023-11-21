@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=invalid-name
 
+import functools
 from itertools import chain
 import types
 
@@ -9,16 +10,20 @@ from django import forms
 from django.utils.functional import cached_property
 from django.utils.module_loading import import_string
 
+from .nidottu import yhdistetty_lomake
 from .piirto import Piirto
 
 
+@functools.wraps(yhdistetty_lomake)
 def yhdista_lomakkeet(
-  LomakeA, LomakeB, *,
-  avain_a=None,
-  avain_b=None,
-  tunnus=None,
-  pakollinen_b=None,
-  valita_parametrit=None,
+  LomakeA: type,
+  LomakeB: type,
+  *,
+  avain_a: str = None,
+  avain_b: str = None,
+  tunnus: str = None,
+  pakollinen_b: bool = None,
+  valita_parametrit: tuple = (),
 ):
   '''
   Yhdistää kaksi ModelForm-luokkaa silloin,
@@ -66,207 +71,63 @@ def yhdista_lomakkeet(
       not LomakeA.Meta.model._meta.get_field(avain_a).null
     )
 
-  class YhdistettyLomake(LomakeA):
-    class Meta(LomakeA.Meta):
+  def liitos_kwargs(self: LomakeA):
+    kohde_b = self.initial.get(tunnus, None)
+    if isinstance(kohde_b, LomakeB.Meta.model):
       pass
+    elif kohde_b is not None:
+      kohde_b = LomakeB.Meta.model.objects.get(pk=kohde_b)
+    elif self.instance and avain_a:
+      kohde_b = getattr(self.instance, avain_a, None)
 
-    def __init__(self, *args, prefix=None, **kwargs):
-      lomake_kwargs = kwargs.pop(f'{tunnus}_kwargs', {})
-      for param in (valita_parametrit or ()):
-        try:
-          lomake_kwargs[param] = kwargs[param]
-        except KeyError:
-          pass
-      super().__init__(*args, prefix=prefix, **kwargs)
-      # Poimitaan B-kohde joko `initial`-sanakirjasta tai A-kohteen tiedoista.
-      kohde_b = self.initial.get(tunnus, None)
-      if isinstance(kohde_b, LomakeB.Meta.model):
+    # Mikäli olemassaolevaa B-kohdetta ei löytynyt, luodaan uusi.
+    if kohde_b is None:
+      kohde_b = LomakeB.Meta.model()
+      # Asetetaan linkki B-->A, jos mahdollista
+      try:
+        setattr(kohde_b, avain_b, self.instance)
+      except (AttributeError, TypeError):
         pass
-      elif kohde_b is not None:
-        kohde_b = LomakeB.Meta.model.objects.get(pk=kohde_b)
-      elif self.instance and avain_a:
-        kohde_b = getattr(self.instance, avain_a, None)
+    assert isinstance(kohde_b, LomakeB.Meta.model), (
+      f'Kohde B ei voi olla tyyppiä {type(kohde_b)} != {LomakeB.Meta.model}!'
+    )
+    return {
+      **({
+        'data': self.data,
+        'files': self.files,
+      } if self.is_bound else {}),
+      'initial': {
+        avain.replace(tunnus + '-', '', 1): arvo
+        for avain, arvo in self.initial.items()
+        if avain.startswith(tunnus + '-') and avain != tunnus + '-'
+      },
+      'instance': kohde_b,
+    }
+    # def liitos_kwargs
 
-      # Mikäli olemassaolevaa B-kohdetta ei löytynyt, luodaan uusi.
-      if kohde_b is None:
-        kohde_b = LomakeB.Meta.model()
-        # Asetetaan linkki B-->A, jos mahdollista
-        try:
-          setattr(kohde_b, avain_b, self.instance)
-        except (AttributeError, TypeError):
-          pass
-      assert isinstance(kohde_b, LomakeB.Meta.model), (
-        f'Kohde B ei voi olla tyyppiä {type(kohde_b)} != {LomakeB.Meta.model}!'
-      )
+  YhdistettyLomake = yhdista_lomakkeet.__wrapped__(
+    LomakeA, LomakeB,
+    tunnus=tunnus,
+    liitos_kwargs=liitos_kwargs,
+    pakollinen=pakollinen_b,
+    valita_parametrit=valita_parametrit,
+  )
 
-      # Käytetään A-lomakkeen vedostajaa oletuksena
-      # myös B-lomakkeella.
-      # Huomaa, että Django vaatii, että `renderer` periytyy
-      # lomakeluokan mahdollisesta `default_renderer`-luokasta.
-      if not 'renderer' in lomake_kwargs:
-        class PiirtoB(Piirto, LomakeB=LomakeB): pass
-        lomake_kwargs['renderer'] = PiirtoB(self)
-        # if not 'renderer' in lomake_kwargs
+  @functools.wraps(YhdistettyLomake, updated=())
+  class YhdistettyLomake(YhdistettyLomake):
+    # pylint: disable=function-redefined
 
-      # Asetetaan B-lomakkeen oletus-`prefix`.
-      lomake_kwargs.setdefault(
-        'prefix', f'{self.prefix}-{tunnus}' if self.prefix else tunnus
-      )
-
-      lomake_b = LomakeB(**{
-        'instance': kohde_b,
-        'data': kwargs.get('data'),
-        'files': kwargs.get('files'),
-        'initial': {
-          avain.replace(tunnus + '-', '', 1): arvo
-          for avain, arvo in self.initial.items()
-          if avain.startswith(tunnus + '-') and avain != tunnus + '-'
-        },
-        **lomake_kwargs
-      })
+    def __init__(self, *args, **kwargs):
+      ''' Piilota ja estä mahdollinen paluuvierasavain B --> A. '''
+      super().__init__(*args, **kwargs)
+      lomake_b = getattr(self, tunnus)
       if avain_b in lomake_b.fields:
         lomake_b.fields[avain_b].disabled = True
         lomake_b.fields[avain_b].required = False
         lomake_b.fields[avain_b].widget = forms.HiddenInput()
-      setattr(self, tunnus, lomake_b)
-      # Jos B-viittaus saa olla tyhjä, asetetaan kaikki B-lomakkeen
-      # kentät valinnaisiksi GET-pyynnöllä.
-      # – Huomaa, että tämä koskee myös mahdollisten sisäkkäisten
-      # lomakkeiden (C) kenttiä.
-      # Lisäksi ohitetaan vimpainten `required`-määreen tulostus.
-      if not pakollinen_b:
-        for kentta in lomake_b:
-          if not self.data:
-            kentta.field.required = False
-          kentta.field.widget.use_required_attribute = lambda initial: False
       # def __init__
 
-    # def order_fields(self, field_order)
-    # def __str__(self)
-    # def __repr__(self)
-
-    def __iter__(self):
-      return chain(
-        super().__iter__(),
-        getattr(self, tunnus).__iter__(),
-      )
-      # def __iter__
-
-    def __getitem__(self, item):
-      if item == tunnus:
-        return getattr(self, tunnus)
-      elif item.startswith(f'{tunnus}-'):
-        return getattr(self, tunnus).__getitem__(
-          item.partition(f'{tunnus}-')[2]
-        )
-      else:
-        return super().__getitem__(item)
-      # def __getitem__
-
-    @property
-    def errors(self):
-      '''
-      Lisää B-lomakkeen mahdolliset virheet silloin, kun
-      B-viittaus ei saa olla tyhjä, tai B-lomaketta on muokattu.
-      '''
-      virheet = list(super().errors.items())
-      if pakollinen_b or getattr(self, tunnus).has_changed():
-        lomake_b = getattr(self, tunnus)
-        for avain, arvo in list(lomake_b.errors.items()):
-          virheet.append([
-            '%s-%s' % (tunnus, avain), arvo
-          ])
-      return forms.utils.ErrorDict(virheet)
-      # def errors
-
-    def is_valid(self):
-      '''
-      Jos B-viittaus saa olla tyhjä eikä sitä ole muokattu,
-      ei välitetä B-lomakkeen mahdollisesta epäkelpoisuudesta.
-      '''
-      return super().is_valid() \
-      and (getattr(self, tunnus).is_valid() or (
-        not pakollinen_b and not getattr(self, tunnus).has_changed()
-      ))
-      # def is_valid
-
-    # def add_prefix(self, field_name)
-    # def add_initial_prefix(self, field_name)
-
-    def _html_output(self, *args, **kwargs):
-      # pylint: disable=protected-access
-      return super()._html_output(*args, **kwargs) \
-      + getattr(self, tunnus)._html_output(*args, **kwargs)
-      # def _html_output
-
-    # def as_table(self)
-    # def as_ul(self)
-    # def as_p(self)
-    # def non_field_errors(self)
-    # def add_error(self, field, error)
-    # def has_error(self, field, code=None)
-    # def full_clean(self)
-    # def _clean_fields(self)
-    # def _clean_form(self)
-    # def _post_clean(self)
-    # def clean(self)
-
-    def has_changed(self):
-      return super().has_changed() \
-      or getattr(self, tunnus).has_changed()
-      # def has_changed
-
-    @cached_property
-    def changed_data(self):
-      '''
-      Palauta ylälomakkeen omien muutosten lisäksi
-      liitoslomakkeen mahdolliset muutokset
-      `tunnus`-etuliitteellä varustettuina.
-      '''
-      lomake = getattr(self, tunnus)
-      return super().changed_data + [
-        f'{tunnus}-{kentta}'
-        for kentta in lomake.changed_data
-      ]
-      # def changed_data
-
-    @property
-    def media(self):
-      return super().media + getattr(self, tunnus).media
-
-    #def is_multipart(self)
-
-    def hidden_fields(self):
-      return [
-        f for f in super().hidden_fields()
-        if f.form is self
-      ]
-      # def hidden_fields
-
-    #def visible_fields(self)
-    #def get_initial_for_field(self, field, field_name)
-
-    # `in`
-
-    def __contains__(self, key):
-      if key == tunnus:
-        return True
-      elif key.startswith(f'{tunnus}-'):
-        key = key.partition(f'{tunnus}-')[2]
-        if hasattr(getattr(self, tunnus), '__contains__') \
-        and getattr(self, tunnus).__contains__(key):
-          return True
-        return key in getattr(self, tunnus).fields
-        # if key.startswith
-      elif hasattr(super(), '__contains__') \
-      and super().__contains__(key):
-        return True
-      else:
-        return key in self.fields
-      # def __contains__
-
-
-    # ModelForm
+    # ModelForm:
 
     @transaction.atomic
     def _save_m2m(self):
@@ -365,12 +226,9 @@ def yhdista_lomakkeet(
         setattr(self.instance, avain_a, lomake_b.instance)
         return self.instance
         # else
-
       # def save
 
     # class YhdistettyLomake
 
-  YhdistettyLomake.__name__ += f'_{tunnus}'
-  YhdistettyLomake.__qualname__ += f'_{tunnus}'
   return YhdistettyLomake
   # def yhdista_lomakkeet
