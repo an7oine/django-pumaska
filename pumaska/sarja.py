@@ -134,8 +134,10 @@ def lisaa_lomakesarja(
         if avain.startswith(tunnus + '-') and avain != tunnus + '-'
       }
       setattr(self, tunnus, lomakesarja(**{
-        'data': kwargs.get('data'),
-        'files': kwargs.get('files'),
+        **({
+          'data': self.data,
+          'files': self.files,
+        } if self.is_bound else {}),
         'instance': self.instance,
         'initial': [initial] if initial else [],
         'prefix': f'{self.prefix}-{tunnus}' if self.prefix else tunnus,
@@ -188,8 +190,10 @@ def lisaa_lomakesarja(
       # def errors
 
     def is_valid(self):
-      return super().is_valid() \
-      and getattr(self, tunnus).is_valid()
+      return super().is_valid() and (
+        getattr(self, tunnus).is_valid()
+        or not getattr(self, tunnus).has_changed()
+      )
       # def is_valid
 
     # def add_prefix(self, field_name)
