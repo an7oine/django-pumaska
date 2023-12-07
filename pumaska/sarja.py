@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=invalid-name
 
+from collections.abc import Iterable
 import functools
 from itertools import chain
 import re
@@ -28,7 +29,7 @@ def lisaa_lomakesarja(
   tunnus=None,
   epasuora=False,
   lomakesarja_parametrit=None,
-  valita_parametrit=None,
+  valita_parametrit: Iterable = (),
   **kwargs
 ):
   '''

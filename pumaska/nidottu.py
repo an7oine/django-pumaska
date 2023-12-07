@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 import functools
 from itertools import chain
 
@@ -14,8 +15,9 @@ def yhdistetty_lomake(
   tunnus: str,
   liitos_kwargs: callable,
   pakollinen: bool = False,
-  valita_parametrit: tuple = (),
+  valita_parametrit: Iterable = (),
 ):
+  assert valita_parametrit is not None
   if liitos is None:
     return functools.partial(
       yhdistetty_lomake,

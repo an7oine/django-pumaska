@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # pylint: disable=invalid-name
 
+from collections.abc import Iterable
 import functools
 from itertools import chain
 import types
@@ -23,7 +24,7 @@ def yhdista_lomakkeet(
   avain_b: str = None,
   tunnus: str = None,
   pakollinen_b: bool = None,
-  valita_parametrit: tuple = (),
+  valita_parametrit: Iterable = (),
 ):
   '''
   Yhdistää kaksi ModelForm-luokkaa silloin,
