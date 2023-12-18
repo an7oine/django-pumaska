@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from django.db import models
 from django import forms
+from django.template import loader
 from django.test import SimpleTestCase
 
 from pumaska import nido
@@ -64,19 +65,74 @@ class Testi(SimpleTestCase):
   def testaa_html(self):
     'Toimiiko HTML-sivun muodostus liitoslomakkeen mukaan?'
     # pylint: disable=line-too-long
-    html = str(nido(
-      forms.modelform_factory(Asiakas, fields=['nimi']),
-      forms.modelform_factory(Asiakasosoite, fields=['osoite']),
-      nido(
-        nido(
-          forms.modelform_factory(Lasku, fields=['numero']),
-          forms.modelform_factory(Paamies, fields=['nimi']),
-          avain_a='paamies'
-        ),
-        forms.modelform_factory(Rivi, fields=['summa']),
-        avain_b='lasku'
-      ),
-    )())
+    class Rivilomake(forms.ModelForm):
+      class Meta:
+        model = Rivi
+        fields = ['summa']
+    class Paamieslomake(forms.ModelForm):
+      class Meta:
+        model = Paamies
+        fields = ['nimi']
+
+    @nido(
+      Rivilomake,
+      avain_b='lasku'
+    )
+    @nido(
+      Paamieslomake,
+      avain_a='paamies'
+    )
+    class Laskulomake(forms.ModelForm):
+      class Meta:
+        model = Lasku
+        fields = ['numero']
+
+      def render(self, *args, **kwargs):
+        '''
+        Piirrä laskun omien kenttien lisäksi päämiehen kentät
+        ja rivilomakkeet.
+        '''
+        return super().render(*args, **kwargs) \
+        + self.paamies.render(*args, **kwargs) \
+        + loader.get_template('pumaska/lomakesarja.html').render({
+          'tunnus': 'rivi',
+          'lomakesarja': self.rivi,
+        })
+        # def render
+
+      # class Laskulomake
+
+    class Asiakasosoitelomake(forms.ModelForm):
+      class Meta:
+        model = Asiakasosoite
+        fields = ['osoite']
+
+    @nido(Laskulomake)
+    @nido(Asiakasosoitelomake)
+    class Asiakaslomake(forms.ModelForm):
+      class Meta:
+        model = Asiakas
+        fields = ['nimi']
+
+      def render(self, *args, **kwargs):
+        '''
+        Piirrä asiakkaan omien kenttien lisäksi osoitteen kentät
+        ja laskulomakkeet.
+        '''
+        return super().render(*args, **kwargs) \
+        + loader.get_template('pumaska/lomakesarja.html').render({
+          'tunnus': 'asiakasosoite',
+          'lomakesarja': self.asiakasosoite,
+        }) \
+        + loader.get_template('pumaska/lomakesarja.html').render({
+          'tunnus': 'lasku',
+          'lomakesarja': self.lasku,
+        })
+        # def render
+
+      # class Asiakaslomake
+
+    html = str(Asiakaslomake())
     for name in map('-'.join, itertools.chain.from_iterable(itertools.starmap(itertools.product, (
       (('asiakasosoite', 'lasku', ), ('TOTAL_FORMS', 'INITIAL_FORMS', 'MIN_NUM_FORMS', 'MAX_NUM_FORMS', )),
       (('asiakasosoite', ), ('__prefix__', ), ('id', 'asiakas', 'osoite', 'DELETE', ), ),
