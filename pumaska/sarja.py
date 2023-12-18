@@ -11,6 +11,7 @@ from django import forms
 from django.template import loader
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
+from django import VERSION as django_versio
 
 from .nidottu import yhdistetty_lomake
 
@@ -190,21 +191,22 @@ def lisaa_lomakesarja(
       return forms.utils.ErrorDict(virheet)
       # def errors
 
-    def _html_output(self, *args, **kwargs):
-      '''
-      Tuotetaan super-tuloste (A-lomake) sekä lomakesarjan perustoteutus:
-      - kukin olemassaoleva B-lomake,
-      - tyhjä B-lomake uuden lisäämiseksi,
-      - hallintolomake ja
-      - tarvittava Javascript rivien poistoon ja lisäämiseen.
-      '''
-      # pylint: disable=protected-access
-      return super()._html_output(*args, **kwargs) \
-      + loader.get_template('pumaska/lomakesarja.html').render({
-        'tunnus': tunnus,
-        'lomakesarja': getattr(self, tunnus),
-      })
-      # def _html_output
+    if django_versio < (5, ):
+      def _html_output(self, *args, **kwargs):
+        '''
+        Tuotetaan super-tuloste (A-lomake) sekä lomakesarjan perustoteutus:
+        - kukin olemassaoleva B-lomake,
+        - tyhjä B-lomake uuden lisäämiseksi,
+        - hallintolomake ja
+        - tarvittava Javascript rivien poistoon ja lisäämiseen.
+        '''
+        # pylint: disable=protected-access
+        return super()._html_output(*args, **kwargs) \
+        + loader.get_template('pumaska/lomakesarja.html').render({
+          'tunnus': tunnus,
+          'lomakesarja': getattr(self, tunnus),
+        })
+        # def _html_output
 
     @cached_property
     def changed_data(self):

@@ -4,6 +4,7 @@ from itertools import chain
 
 from django import forms
 from django.utils.functional import cached_property
+from django import VERSION as django_versio
 
 from pumaska.piirto import Piirto
 
@@ -142,11 +143,12 @@ def yhdistetty_lomake(
     # def add_prefix(self, field_name)
     # def add_initial_prefix(self, field_name)
 
-    def _html_output(self, *args, **kwargs):
-      # pylint: disable=protected-access
-      return super()._html_output(*args, **kwargs) \
-      + getattr(self, tunnus)._html_output(*args, **kwargs)
-      # def _html_output
+    if django_versio < (5, ):
+      def _html_output(self, *args, **kwargs):
+        # pylint: disable=protected-access
+        return super()._html_output(*args, **kwargs) \
+        + getattr(self, tunnus)._html_output(*args, **kwargs)
+        # def _html_output
 
     # def as_table(self)
     # def as_ul(self)
