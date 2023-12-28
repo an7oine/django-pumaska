@@ -43,10 +43,12 @@ def yhdistetty_lomake(
 
       super().__init__(*args, prefix=prefix, **kwargs)
 
-      # Käytetään A-lomakkeen vedostajaa oletuksena
-      # myös B-lomakkeella.
-      # Huomaa, että Django vaatii, että `renderer` periytyy
-      # lomakeluokan mahdollisesta `default_renderer`-luokasta.
+      # Käytetään A-lomakkeen vedostajaa oletuksena myös B-lomakkeella.
+      # Huomaa:
+      # - Django vaatii, että `renderer` periytyy lomakeluokan
+      #   mahdollisesta `default_renderer`-luokasta;
+      # - lomake ei ota (Django 4.2) vastaan parametriä `renderer`,
+      #   tämä täytyy asettaa jälkeenpäin määreenä.
       if not 'renderer' in ajonaikainen_kwargs:
         class PiirtoB(Piirto, LomakeB=liitos): pass
         # Lomakesarja ei ota `renderer`-parametriä vastaan.
@@ -57,11 +59,13 @@ def yhdistetty_lomake(
           ajonaikainen_kwargs['renderer'] = PiirtoB(self)
         # if not 'renderer' in ajonaikainen_kwargs
 
-      # Asetetaan liitoksen oletus-`prefix`.
-      ajonaikainen_kwargs.setdefault(
-        'prefix', f'{self.prefix}-{tunnus}' if self.prefix else tunnus
-      )
-
+      # Annetaan sisemmän lomakkeen alustuksessa oletuksena:
+      # - data ja files, mikäli ulompi lomake on lähetetty,
+      # - initial: `<tunnus>-`-alkuiset, epätyhjät avaimet ulomman
+      #   lomakkeen initial-datassa
+      # - prefix: `<ulompi prefix>-<tunnus>`
+      # Huomaa, että `liitos_kwargs()` ja `ajonaikainen_kwargs` (tässä
+      # järjestyksessä) ylikirjoittavat nämä oletusarvot.
       _liitos = liitos(**{
         **({
           'data': self.data,
@@ -72,17 +76,24 @@ def yhdistetty_lomake(
           for avain, arvo in self.initial.items()
           if avain.startswith(tunnus + '-') and avain != tunnus + '-'
         },
+        'prefix': f'{self.prefix}-{tunnus}' if self.prefix else tunnus,
         **liitos_kwargs(self),
         **ajonaikainen_kwargs,
       })
+
+      # Asetetaan tarvittavat määreet (renderer).
       for avain, arvo in asetettavat_maareet.items():
         setattr(_liitos, avain, arvo)
+
+      # Asetetaan viittaus ulommasta lomakkeesta sisempään.
       setattr(self, tunnus, _liitos)
-      # Jos B-viittaus saa olla tyhjä, asetetaan kaikki B-lomakkeen
-      # kentät valinnaisiksi GET-pyynnöllä.
-      # – Huomaa, että tämä koskee myös mahdollisten sisäkkäisten
-      # lomakkeiden (C) kenttiä.
-      # Lisäksi ohitetaan vimpainten `required`-määreen tulostus.
+
+      # Jos B-viittaus saa olla tyhjä:
+      # - asetetaan kaikki B-lomakkeen kentät valinnaisiksi GET-pyynnöllä;
+      # – huomaa, että tämä koskee myös mahdollisten sisäkkäisten
+      #   lomakkeiden (C) kenttiä; ks. `__iter__`-toteutus alla;
+      # - ohitetaan vimpainten `required`-määreen tulostus;
+      # - huomaa, että tämä ei tee mitään sisemmälle lomakesarjalle.
       if not pakollinen:
         for kentta in _liitos:
           if hasattr(kentta, 'field'):

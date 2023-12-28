@@ -121,6 +121,12 @@ def lisaa_lomakesarja(
     )
 
   def liitos_kwargs(self: LomakeA):
+    '''
+    Korvataan oletusarvoinen, ulommasta initial-datasta poimittu
+    `initial` luetteloksi käärityllä versiolla.
+
+    Asetetaan ulompi olio lomakesarjan `instanceksi`.
+    '''
     initial = {
       avain.replace(tunnus + '-', '', 1): arvo
       for avain, arvo in self.initial.items()
