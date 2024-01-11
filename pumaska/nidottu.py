@@ -14,7 +14,7 @@ def yhdistetty_lomake(
   liitos: type = None,
   *,
   tunnus: str,
-  liitos_kwargs: callable,
+  liitos_kwargs: callable = None,
   pakollinen: bool = False,
   valita_parametrit: Iterable = (),
 ):
@@ -77,7 +77,12 @@ def yhdistetty_lomake(
           if avain.startswith(tunnus + '-') and avain != tunnus + '-'
         },
         'prefix': f'{self.prefix}-{tunnus}' if self.prefix else tunnus,
-        **liitos_kwargs(self),
+        **(
+          liitos_kwargs(self)
+          if callable(liitos_kwargs)
+          else liitos_kwargs if liitos_kwargs is not None
+          else {}
+        ),
         **ajonaikainen_kwargs,
       })
 
