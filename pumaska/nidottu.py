@@ -112,19 +112,37 @@ def yhdistetty_lomake(
     # def __repr__(self)
 
     def __iter__(self):
+      '''
+      Iteroidaan lomakesarjaan liittyvät lomakkeet erikseen; lomake erikseen.
+      '''
+      _liitos = getattr(self, tunnus)
       return chain(
         super().__iter__(),
-        getattr(self, tunnus).__iter__(),
+        chain.from_iterable(_liitos)
+        if isinstance(_liitos, forms.BaseFormSet)
+        else _liitos.__iter__(),
       )
       # def __iter__
 
     def __getitem__(self, item):
+      '''
+      Poimi liitoslomake(sarja), liitoslomakkeen kenttä tai (lomakesarjan
+      tapauksessa) liitoslomakesarjan lomake tai tämän kenttä.
+      '''
       if item == tunnus:
         return getattr(self, tunnus)
-      elif item.startswith(f'{tunnus}-'):
-        return getattr(self, tunnus).__getitem__(
-          item.partition(f'{tunnus}-')[2]
-        )
+      elif item.startswith(f'{tunnus}-') \
+      and (_liitos_kentta := item.partition(f'{tunnus}-')[2]):
+        _liitos = getattr(self, tunnus)
+        if isinstance(_liitos, forms.BaseFormSet):
+          indeksi, _, item = _liitos_kentta.partition('-')
+          _liitos_lomake = _liitos.__getitem__(int(indeksi))
+          if item:
+            return _liitos_lomake.__getitem__(item)
+          else:
+            return _liitos_lomake
+        else:
+          return _liitos.__getitem__(_liitos_kentta)
       else:
         return super().__getitem__(item)
       # def __getitem__
@@ -132,16 +150,30 @@ def yhdistetty_lomake(
     @property
     def errors(self):
       '''
-      Lisää B-lomakkeen mahdolliset virheet silloin, kun
-      B-viittaus ei saa olla tyhjä, tai B-lomaketta on muokattu.
+      Lisää liitoslomakkeen tai -sarjan mahdolliset virheet silloin, kun
+      liitos on pakollinen tai sitä on muokattu.
       '''
       virheet = list(super().errors.items())
       if (_liitos := getattr(self, tunnus)).has_changed() \
       or pakollinen:
-        for avain, arvo in list(_liitos.errors.items()):
-          virheet.append([
-            '%s-%s' % (tunnus, avain), arvo
-          ])
+        if isinstance(_liitos, forms.BaseFormSet):
+          for indeksi, lomake in enumerate(_liitos.forms):
+            if lomake not in _liitos.deleted_forms:
+              for avain, arvo in list(lomake.errors.items()):
+                virheet.append([
+                  '%s-%d-%s' % (tunnus, indeksi, avain), arvo
+                ])
+          if any(_liitos.non_form_errors()):
+            virheet.append([
+              # Lisää lomakeriippumattomat virheet hallintolomakkeen kohdalle.
+              tunnus + '-TOTAL_FORMS',
+              _liitos.non_form_errors()
+            ])
+        else:
+          for avain, arvo in list(_liitos.errors.items()):
+            virheet.append([
+              '%s-%s' % (tunnus, avain), arvo
+            ])
       return forms.utils.ErrorDict(virheet)
       # def errors
 
@@ -190,11 +222,31 @@ def yhdistetty_lomake(
       liitoslomakkeen mahdolliset muutokset
       `tunnus`-etuliitteellä varustettuina.
       '''
-      lomake = getattr(self, tunnus)
-      return super().changed_data + [
-        f'{tunnus}-{kentta}'
-        for kentta in getattr(lomake, 'changed_data', ())
-      ]
+      muutokset = super().changed_data
+      _liitos = getattr(self, tunnus)
+      if isinstance(_liitos, forms.BaseFormSet):
+        muutokset += [
+          # Muodosta lomakekohtainen kentän etuliite poistamalla
+          # liitetyn lomakkeen `prefixin` alusta
+          # käsillä olevan (ylä-) lomakkeen oma `prefix` ja välimerkki -.
+          f'{lomakekohtainen_tunnus}-{kentta}'
+          for lomake, lomakekohtainen_tunnus in (
+            (
+              lomake,
+              (
+                lomake.prefix.replace(self.prefix + "-", "", 1)
+              ) if self.prefix else lomake.prefix
+            )
+            for lomake in _liitos
+          )
+          for kentta in lomake.changed_data
+        ]
+      else:
+        muutokset += [
+          f'{tunnus}-{kentta}'
+          for kentta in getattr(_liitos, 'changed_data', ())
+        ]
+      return muutokset
       # def changed_data
 
     @property

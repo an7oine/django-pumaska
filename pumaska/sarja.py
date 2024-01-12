@@ -151,51 +151,7 @@ def lisaa_lomakesarja(
   class YhdistettyLomake(YhdistettyLomake):
     # pylint: disable=function-redefined
 
-    def __iter__(self):
-      '''
-      Ohitetaan super. Tuotetaan A-lomakkeen ja kunkin B-lomakkeen kentät.
-      '''
-      return chain(
-        # super().__iter__(),
-        LomakeA.__iter__(self),
-        *(lomake.__iter__() for lomake in getattr(self, tunnus).__iter__()),
-      )
-      # def __iter__
-
-    def __getitem__(self, item):
-      '''
-      Haetaan kunkin indeksoidun lomakkeen kentät erikseen; muuten käytetään
-      super-toteutusta.
-      '''
-      if item.startswith(f'{tunnus}-'):
-        indeksi, _, item = item.partition(f'{tunnus}-')[2].partition('-')
-        return getattr(self, tunnus).__getitem__(int(indeksi)).__getitem__(item)
-      else:
-        return super().__getitem__(item)
-      # def __getitem__
-
-    @property
-    def errors(self):
-      '''
-      Ohitetaan super. Tuotetaan A-lomakkeen, kunkin B-lomakkeen sekä
-      lomakesarjan omat virheet.
-      '''
-      virheet = list(LomakeA.errors.fget(self).items())
-      lomakesarja = getattr(self, tunnus)
-      for indeksi, lomake in enumerate(lomakesarja.forms):
-        if lomake not in lomakesarja.deleted_forms:
-          for avain, arvo in list(lomake.errors.items()):
-            virheet.append([
-              '%s-%d-%s' % (tunnus, indeksi, avain), arvo
-            ])
-      if any(lomakesarja.non_form_errors()):
-        virheet.append([
-          # Lisää lomakeriippumattomat virheet hallintolomakkeen kohdalle.
-          tunnus + '-TOTAL_FORMS',
-          lomakesarja.non_form_errors()
-        ])
-      return forms.utils.ErrorDict(virheet)
-      # def errors
+    # HTML (Django 4-)
 
     if django_versio < (5, ):
       def _html_output(self, *args, **kwargs):
@@ -213,25 +169,6 @@ def lisaa_lomakesarja(
           'lomakesarja': getattr(self, tunnus),
         })
         # def _html_output
-
-    @cached_property
-    def changed_data(self):
-      '''
-      Palauta A-lomakkeen muuttuneet kentät (super) sekä kunkin B-lomakkeen
-      mahdolliset muuttuneet kentät.
-      '''
-      lomakesarja = getattr(self, tunnus)
-      # Muodosta lomakekohtainen kentän etuliite poistamalla
-      # liitetyn lomakkeen `prefixin` alusta
-      # käsillä olevan (ylä-) lomakkeen oma `prefix` ja välimerkki -.
-      lomakekohtainen_tunnus = (
-        lambda lomake: lomake.prefix.replace(self.prefix + "-", "", 1)
-      ) if self.prefix else lambda lomake: lomake.prefix
-      return super().changed_data + sum([[
-        f'{lomakekohtainen_tunnus(lomake)}-{kentta}'
-        for kentta in lomake.changed_data
-      ] for lomake in lomakesarja], [])
-      # def changed_data
 
 
     # ModelForm
