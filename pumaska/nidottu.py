@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from contextlib import contextmanager
 import functools
 from itertools import chain
 
@@ -283,6 +284,19 @@ def yhdistetty_lomake(
       else:
         return key in self.fields
       # def __contains__
+
+    @staticmethod
+    @contextmanager
+    def tallenna_liitos(tunnus):
+      ''' Lisätään `tunnus` etuliitteenä mahdollisiin virheisiin. '''
+      try:
+        yield
+      except forms.ValidationError as exc:
+        raise type(exc)({
+          '-'.join((tunnus, avain)): arvo
+          for avain, arvo in dict(exc).items()
+        })
+      # def tallenna_liitos
 
     # class YhdistettyLomake
 

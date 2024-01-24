@@ -187,7 +187,8 @@ def lisaa_lomakesarja(
       lomakesarja = getattr(self, tunnus)
       lomakesarja.instance = self.instance
       try:
-        lomakesarja.save(commit=True)
+        with self.tallenna_liitos(tunnus):
+          lomakesarja.save(commit=True)
       except ProtectedError as exc:
         try:
           _mallin_nimi = mallin_nimi.match(str(exc))[1]

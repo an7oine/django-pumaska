@@ -147,7 +147,8 @@ def yhdista_lomakkeet(
         if vanha_kohde_b == lomake_b.instance and vanha_kohde_b.pk:
           # Päivitetään olemassaoleva B
           try:
-            lomake_b.save(commit=True)
+            with self.tallenna_liitos(tunnus):
+              lomake_b.save(commit=True)
           except (ValueError, DatabaseError):
             if pakollinen_b:
               raise
@@ -160,7 +161,8 @@ def yhdista_lomakkeet(
 
           # Yritetään tallentaa B ja otetaan virhe kiinni
           try:
-            kohde_b = lomake_b.save(commit=True)
+            with self.tallenna_liitos(tunnus):
+              kohde_b = lomake_b.save(commit=True)
           except (ValueError, DatabaseError):
             if pakollinen_b:
               raise
@@ -188,7 +190,8 @@ def yhdista_lomakkeet(
       # (muussa tapauksessa B tallennetaan lopuksi `_save_m2m`-metodissa)
       if avain_a and not self.Meta.model._meta.get_field(avain_a).null:
         lomake_b = getattr(self, tunnus)
-        kohde_b = lomake_b.save(commit=commit)
+        with self.tallenna_liitos(tunnus):
+          kohde_b = lomake_b.save(commit=commit)
         setattr(self.instance, avain_a, kohde_b)
 
         # Kun `commit=False`, ja B on uusi, tallentamaton tietokantarivi:
@@ -198,7 +201,8 @@ def yhdista_lomakkeet(
           def save(instance):
             # Hae tämänhetkinen B, tallenna se ja aseta uudelleen.
             kohde_b = getattr(instance, avain_a)
-            kohde_b.save()
+            with self.tallenna_liitos(tunnus):
+              kohde_b.save()
             # Päivitä B-lomakkeen rivi ja kutsu sen `save_m2m`-metodia.
             lomake_b.instance = kohde_b
             lomake_b.save_m2m()
