@@ -3,13 +3,11 @@
 
 from collections.abc import Iterable
 import functools
-from itertools import chain
 import re
 
 from django.db.models import ProtectedError
 from django import forms
 from django.template import loader
-from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from django import VERSION as django_versio
 
@@ -29,6 +27,7 @@ def lisaa_lomakesarja(
   avain_b=None,
   tunnus=None,
   epasuora=False,
+  pakollinen=False,
   lomakesarja_parametrit=None,
   valita_parametrit: Iterable = (),
   **kwargs
@@ -146,6 +145,7 @@ def lisaa_lomakesarja(
     tunnus=tunnus,
     liitos_kwargs=liitos_kwargs,
     valita_parametrit=valita_parametrit,
+    pakollinen=pakollinen,
   )
   @functools.wraps(YhdistettyLomake, updated=())
   class YhdistettyLomake(YhdistettyLomake):
