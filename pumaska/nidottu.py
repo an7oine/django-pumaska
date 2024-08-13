@@ -54,8 +54,11 @@ def yhdistetty_lomake(
         class PiirtoB(Piirto, LomakeB=liitos): pass
         # Lomakesarja ei ota `renderer`-parametriä vastaan.
         # Asetetaan tämä alustuksen jälkeen määreenä.
+        # Huomaa, että Django 5.0 käyttää erillistä `form_renderer`-määrettä
+        # lomakesarjaan sisältyvien lomakkeiden piirtoon.
         if issubclass(liitos, forms.BaseFormSet):
-          asetettavat_maareet['renderer'] = PiirtoB(self)
+          asetettavat_maareet['renderer'] \
+          = asetettavat_maareet['form_renderer'] = PiirtoB(self)
         else:
           ajonaikainen_kwargs['renderer'] = PiirtoB(self)
         # if not 'renderer' in ajonaikainen_kwargs
