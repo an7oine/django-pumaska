@@ -137,6 +137,11 @@ def lisaa_lomakesarja(
     return {
       'initial': [initial] if initial else [],
       'instance': self.instance,
+      'queryset': (
+        getattr(self.instance, avain_a).all()
+        if avain_a and self.instance.pk
+        else None
+      ),
     }
     # def liitos_kwargs
 
