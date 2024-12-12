@@ -295,10 +295,15 @@ def yhdistetty_lomake(
       try:
         yield
       except forms.ValidationError as exc:
-        raise type(exc)({
-          '-'.join((tunnus, avain)): arvo
-          for avain, arvo in dict(exc).items()
-        })
+        try:
+          sanakirja = exc.message_dict
+        except AttributeError:
+          raise type(exc)({tunnus: exc}) from exc
+        else:
+          raise type(exc)({
+            '-'.join((tunnus, avain)): arvo
+            for avain, arvo in sanakirja.items()
+          }) from exc
       # def tallenna_liitos
 
     # class YhdistettyLomake
