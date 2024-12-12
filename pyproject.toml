@@ -1,2 +1,22 @@
 [build-system]
-requires = ["git-versiointi>=1.6rc3", "setuptools>=42", "wheel"]
+requires = ["git-versiointi>=1.7b1", "setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "django-pumaska"
+dynamic = ["version"]
+requires-python = ">= 3.8"
+description = "Sisäkkäisten lomakkeiden ja -sarjojen käsittely"
+readme = "README.md"
+authors = [
+  {name = "Antti Hautaniemi", email = "antti.hautaniemi@pispalanit.fi"},
+]
+
+[project.urls]
+Repository = "https://github.com/an7oine/django-pumaska.git"
+
+[project.entry-points."django.sovellus"]
+pumaska = "pumaska"
+
+[tool.setuptools.packages.find]
+exclude = ["testit"]
